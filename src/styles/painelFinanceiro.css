@@ -1,0 +1,154 @@
+.cards-indicadores,
+.painel-financeiro {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  flex: 1 1 220px;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  padding: 1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.card:hover {
+  transform: scale(1.02);
+}
+
+.card-receita {
+  background-color: #e6ffec;
+}
+
+.card-despesa {
+  background-color: #ffeaea;
+}
+
+.card-lucro {
+  background-color: #e6f0ff;
+}
+
+.card-custo {
+  background-color: #f3eaff;
+}
+
+.card h4 {
+  font-size: 1rem;
+  margin-top: 0.5rem;
+}
+
+.card .valor {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin-top: 0.25rem;
+}
+
+.card .icone {
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.resumo-final {
+  text-align: center;
+  font-size: 0.9rem;
+  color: #555;
+  margin-top: 1rem;
+}
+
+.sub-abas-financeiro {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.sub-abas-financeiro button {
+  padding: 0.5rem 1.25rem;
+  border-radius: 9999px;
+  border: none;
+  background-color: #f0f4ff;
+  color: #4b5563;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s, transform 0.2s,
+    box-shadow 0.2s;
+}
+
+.sub-abas-financeiro button.ativa {
+  background-color: #6c63ff;
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.sub-abas-financeiro button:hover {
+  background-color: #e9ecff;
+  transform: translateY(-2px);
+}
+
+.linha-filtros-e-botoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.botoes-financeiro {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+  z-index: 1;
+}
+
+.botoes-financeiro-centro {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.filtros-financeiro {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 1rem;
+  background-color: #f9f9ff;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  z-index: 0;
+  position: relative;
+}
+
+/* Versão compacta alinhada à direita */
+.filtros-financeiro-direita {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background-color: #f9f9ff;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+.filtros-financeiro-direita .campo-filtro,
+.filtros-financeiro-direita .campo-filtro-select {
+  width: 140px;
+}
+
+.filtros-financeiro-direita input,
+.filtros-financeiro-direita .react-select__control {
+  height: 32px;
+  min-height: 32px;
+  font-size: 0.85rem;
+  padding: 4px 8px;
+}

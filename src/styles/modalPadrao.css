@@ -1,0 +1,25 @@
+.modal-content {
+  max-height: 85vh;
+  overflow-y: auto;
+  padding-right: 12px;
+}
+
+/* Corpo interno dos modais com rolagem suave */
+.modal-body {
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+/* Espaçamento interno para formulários de etapa */
+.form-etapa label,
+.form-etapa select,
+.form-etapa button {
+  display: block;
+  margin-bottom: 12px;
+}
+
+.botao-novo-dia {
+  margin-top: 24px;
+  text-align: center;
+}

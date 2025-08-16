@@ -1,0 +1,311 @@
+/* === Estilo Base da Tabela Padronizada === */
+.tabela-padrao {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 8px;
+  font-size: 0.875rem;
+  color: #333;
+  table-layout: fixed;
+  white-space: nowrap;
+}
+
+/* === Cabeçalho fixo e destacado === */
+.tabela-padrao thead th {
+  background-color: #e6f0ff;
+  padding: 14px 16px;
+  text-align: left;
+  font-weight: 700;
+  color: #1e3a8a;
+  border-bottom: 2px solid #a8c3e6;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  white-space: nowrap;
+}
+
+/* === Destaque da coluna ativa === */
+.coluna-hover,
+.tabela-padrao thead th.coluna-hover {
+  background-color: rgba(33, 150, 243, 0.08) !important;
+  transition: background-color 0.2s ease;
+}
+
+/* === Estilo das linhas === */
+.tabela-padrao tbody tr {
+  background-color: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  transition: all 0.2s ease-in-out;
+}
+
+/* === Linhas alternadas === */
+.tabela-padrao tbody tr:nth-child(even) {
+  background-color: #f3f4f6;
+}
+
+/* === Hover de linha === */
+.tabela-padrao tbody tr:hover {
+  background-color: #e0f2ff !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+/* === Células === */
+.tabela-padrao td {
+  padding: 16px 20px;
+  border-bottom: 1px solid #eee;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  position: relative;
+  z-index: 0;
+}
+
+/* === Remove borda final === */
+.tabela-padrao tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* === Evita corte de botão === */
+.tabela-padrao td:last-child {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+}
+
+.tabela-padrao td:last-child button {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+}
+
+.acao-icon {
+  transition: transform 0.2s;
+}
+
+.acao-icon:hover {
+  transform: scale(1.1);
+}
+
+/* === Linha especial: prenha === */
+.tr-prenha {
+  border-left: 4px solid #34d399;
+  background-color: #f0fdfa;
+}
+
+/* === Coluna de ações (centraliza e alinha os botões) === */
+.tabela-padrao td.coluna-acoes {
+  text-align: center;
+  padding: 10px 8px;
+  vertical-align: middle;
+  white-space: nowrap;
+  max-width: 160px;
+}
+
+/* === Agrupamento de botões dentro da célula de ações === */
+.botoes-tabela {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.input-medir {
+  width: 80px;
+  padding: 6px 10px;          /* padding equilibrado */
+  font-size: 0.95rem;
+  line-height: 1.25;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  text-align: center;
+  appearance: none;
+  -moz-appearance: textfield;
+  box-sizing: border-box;
+  height: auto;               /* evita estourar com height fixa */
+}
+
+.input-medir::-webkit-outer-spin-button,
+.input-medir::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.input-medir:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.3);
+  outline: none;
+}
+
+/* === Estilo dos checkboxes na tabela === */
+.checkbox-tabela {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  accent-color: #1F3FB6;
+  cursor: pointer;
+}
+
+/* ===== Estilos específicos para tabela de reprodução ===== */
+.tabela-reproducao {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.tabela-reproducao th,
+.tabela-reproducao td {
+  padding: 6px 8px;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tabela-reproducao th.checkbox,
+.tabela-reproducao td.checkbox {
+  width: 30px;
+}
+
+.tabela-reproducao th.numero,
+.tabela-reproducao td.numero {
+  width: 50px;
+}
+
+.tabela-reproducao th.brinco,
+.tabela-reproducao td.brinco {
+  width: 70px;
+}
+
+.tabela-reproducao th.del,
+.tabela-reproducao td.del {
+  width: 50px;
+}
+
+.tabela-reproducao th.acoes,
+.tabela-reproducao td.acoes {
+  width: 150px;
+  text-align: center;
+}
+
+.tabela-reproducao th.ficha,
+.tabela-reproducao td.ficha {
+  width: 60px;
+}
+
+/* ===== Estilos específicos para tabela de plantel ===== */
+
+.tabela-plantel {
+  width: 100%;
+  table-layout: auto;
+}
+
+.tabela-plantel th,
+.tabela-plantel td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 8px 10px;
+  font-size: 0.85rem;
+}
+
+.tabela-plantel th.numero,
+.tabela-plantel td.numero {
+  min-width: 50px;
+}
+
+.tabela-plantel th.brinco,
+.tabela-plantel td.brinco {
+  min-width: 80px;
+}
+
+.tabela-plantel th.lactacoes,
+.tabela-plantel td.lactacoes {
+  min-width: 60px;
+}
+
+.tabela-plantel th.del,
+.tabela-plantel td.del {
+  min-width: 70px;
+}
+
+.tabela-plantel th.categoria,
+.tabela-plantel td.categoria {
+  min-width: 100px;
+}
+
+.tabela-plantel th.idade,
+.tabela-plantel td.idade {
+  min-width: 80px;
+}
+
+.tabela-plantel th.ultimaia,
+.tabela-plantel td.ultimaia {
+  min-width: 100px;
+}
+
+.tabela-plantel th.parto,
+.tabela-plantel td.parto {
+  min-width: 100px;
+}
+
+.tabela-plantel th.raca,
+.tabela-plantel td.raca {
+  min-width: 90px;
+}
+
+.tabela-plantel th.pai,
+.tabela-plantel td.pai {
+  min-width: 80px;
+}
+
+.tabela-plantel th.mae,
+.tabela-plantel td.mae {
+  min-width: 80px;
+}
+
+.tabela-plantel th.previsaoParto,
+.tabela-plantel td.previsaoParto {
+  min-width: 120px;
+}
+
+.tabela-plantel th.acoes,
+.tabela-plantel td.acoes {
+  min-width: 120px;
+  text-align: center;
+  overflow: visible;
+  white-space: normal;
+  text-overflow: unset;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* Limita o tamanho das colunas com texto extenso */
+.tabela-padrao td.coluna-limitada {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Permite conteúdo visível nas colunas com popover */
+.tabela-padrao td.coluna-overflow {
+  overflow: visible !important;
+  position: relative;
+  z-index: 1;
+}
+
+/* Espaço extra para ícone de informações */
+.tabela-reproducao td.coluna-overflow {
+  padding-right: 12px !important;
+}
+
+/* Popover de informações das etapas */
+.popover-info {
+  position: absolute;
+  z-index: 10;
+}

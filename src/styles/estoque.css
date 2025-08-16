@@ -1,0 +1,39 @@
+.tabela-estoque {
+  table-layout: fixed;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabela-estoque th,
+.tabela-estoque td {
+  padding: 8px 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tabela-estoque th:nth-child(1),
+.tabela-estoque td:nth-child(1) { width: 13%; }
+
+.tabela-estoque th:nth-child(2),
+.tabela-estoque td:nth-child(2),
+.tabela-estoque th:nth-child(3),
+.tabela-estoque td:nth-child(3),
+.tabela-estoque th:nth-child(4),
+.tabela-estoque td:nth-child(4),
+.tabela-estoque th:nth-child(5),
+.tabela-estoque td:nth-child(5),
+.tabela-estoque th:nth-child(6),
+.tabela-estoque td:nth-child(6) { width: 8%; }
+
+.tabela-estoque th:nth-child(7),
+.tabela-estoque td:nth-child(7),
+.tabela-estoque th:nth-child(8),
+.tabela-estoque td:nth-child(8) { width: 16%; }
+
+.tabela-estoque th:nth-child(9),
+.tabela-estoque td:nth-child(9) { width: 15%; }
+
+.tabela-estoque td:nth-child(9) {
+  white-space: nowrap;
+}

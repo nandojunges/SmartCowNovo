@@ -1,0 +1,238 @@
+.filtros-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 0;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.filtro-campo {
+  display: flex;
+  flex-direction: column;
+  min-width: 140px;
+}
+
+.filtro-campo label {
+  font-weight: 500;
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+}
+
+.filtro-campo input,
+.filtro-campo select {
+  padding: 4px 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background-color: #fdfdfd;
+  box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+  min-height: 35px;
+  width: 100%;
+}
+
+.botao-plantel {
+  margin-left: auto;
+  padding: 8px 14px;
+  background-color: #e0e0ff;
+  border: 1px solid #999;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.botao-aplicar-filtros:hover {
+  background-color: #5848cc;
+}
+
+
+.botao-aplicar {
+  background-color: #6c63ff;
+  color: #ffffff;
+  padding: 8px 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.botao-aplicar:hover {
+  background-color: #5848cc;
+  transform: scale(1.02);
+}
+
+.botao-limpar {
+  background-color: #ffffff;
+  border: 1px solid #ccc;
+  padding: 8px 14px;
+  border-radius: 8px;
+  color: #333;
+  cursor: pointer;
+}
+
+
+
+.botoes-filtros {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  grid-column: 1/-1;
+}
+
+.filtros-rapidos {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-bottom: 0.5rem;
+  grid-column: 1 / -1;
+}
+
+.filtros-rapidos button {
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background-color 0.2s;
+}
+
+.filtros-rapidos button:hover {
+  background-color: #e0e7ff;
+}
+
+.botao-limpar-filtros:hover {
+  background-color: #e5e7eb;
+}
+
+.select-estilizado {
+  width: 200px;
+  min-width: 200px;
+}
+
+/* Layout inline dos filtros conforme solicitado */
+.filtros-linha {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+}
+
+.select-estilizado .react-select__control {
+  padding: 0 8px;
+  border-radius: 6px;
+  background-color: #fdfdfd;
+  border: 1px solid #ccc;
+  box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+  min-height: 36px;
+  height: 36px;
+  font-size: 0.9rem;
+}
+
+.campo-filtro,
+.campo-filtro input,
+.campo-filtro-select .react-select__control {
+  height: 35px;
+  padding: 4px 8px;
+  font-size: 0.95rem;
+  border-radius: 6px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.resumo-filtros {
+  font-size: 0.9rem;
+  color: #555;
+  margin-top: 0.5rem;
+}
+
+.filtros-horizontal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1.5rem;
+  background-color: #f9f9ff;
+  border-radius: 12px;
+  justify-content: flex-start;
+  align-items: flex-end;
+}
+
+.campo-filtro {
+  display: flex;
+  flex-direction: column;
+  width: 180px;
+}
+
+.campo-filtro label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.campo-filtro input {
+  height: 35px;
+  padding: 4px 8px;
+  font-size: 0.95rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.react-select__control {
+  height: 35px;
+  min-height: 35px;
+  font-size: 0.95rem;
+  border-radius: 6px;
+}
+
+/* Layout lateral fixo para os filtros do financeiro */
+.filtros-lateral {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  width: 220px;
+  background-color: #f9f9ff;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  position: sticky;
+  top: 1rem;
+  left: 1rem;
+  z-index: 10;
+}
+
+.filtros-lateral .campo-filtro {
+  display: flex;
+  flex-direction: column;
+}
+
+.filtros-lateral .campo-filtro label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.filtros-lateral input,
+.filtros-lateral .react-select__control {
+  height: 38px;
+  font-size: 0.9rem;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+}
+
+.filtros-lateral-direita {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: flex-end;
+}
