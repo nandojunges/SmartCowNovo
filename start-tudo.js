@@ -28,9 +28,9 @@ if (fs.existsSync(distPath)) {
   }
 }
 
-// 🔪 Mata processos da porta 3000
+// 🔪 Mata processos da porta 3001
 try {
-  const result = execSync('netstat -ano | findstr :3000').toString();
+  const result = execSync('netstat -ano | findstr :3001').toString();
   const lines = result.trim().split('\n');
   const pids = new Set();
 
@@ -43,7 +43,7 @@ try {
   pids.forEach((pid) => {
     try {
       execSync(`taskkill /PID ${pid} /F`);
-      console.log(`✔️ Processo na porta 3000 (PID ${pid}) finalizado.`);
+      console.log(`✔️ Processo na porta 3001 (PID ${pid}) finalizado.`);
     } catch (e) {
       console.log(`⚠️ Não foi possível finalizar PID ${pid}:`, e.message);
     }
@@ -66,18 +66,18 @@ build.on('exit', (code) => {
   console.log('\n🚀 Iniciando backend...');
   spawn('nodemon', ['backend/server.js'], { stdio: 'inherit', shell: true });
 
-  // ⏳ Aguarda a porta 3000 abrir
+  // ⏳ Aguarda a porta  abrir
   const esperaBackend = setInterval(() => {
-    const client = net.createConnection({ port: 3000 }, async () => {
+    const client = net.createConnection({ port: 3001 }, async () => {
       clearInterval(esperaBackend);
       client.end();
 
       // 🌐 Inicia o ngrok
       try {
-        const url = await ngrok.connect(3000);
+        const url = await ngrok.connect(3001);
         console.log('\n=============================');
         console.log(`✅ NGROK rodando em: ${url}`);
-        console.log('🌐 Acesse também via: http://localhost:3000');
+        console.log('🌐 Acesse também via: http://localhost:3001');
         console.log('=============================\n');
       } catch (error) {
         console.error('❌ Erro ao iniciar ngrok direto:', error.message || error);

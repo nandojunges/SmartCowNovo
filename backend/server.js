@@ -1,178 +1,125 @@
-const path = require('path');
-// Carrega variáveis do backend/.env e, se existir, também do .env da raiz
-require('dotenv').config(); // backend/.env
-require('dotenv').config({ path: path.join(__dirname, '..', '.env') }); // fallback raiz
-const express = require('express');
-const cors = require('cors');
-const cfg = require('./config/env');
-const dbMiddleware = require('./middleware/dbMiddleware');
-const fs = require('fs');
-let morgan; try { morgan = require('morgan'); } catch {}
+// backend/server.js (ESM)
+import express from "express";
+import cors from "cors";
+import morgan from "morgan";
+import path from "node:path";
+import fs from "node:fs";
+import { fileURLToPath } from "node:url";
+import dotenv from "dotenv";
 
-const vacasRoutes = require('./routes/vacasRoutes');
-const animaisRouter = require('./routes/animais');
-const tarefasRoutes = require('./routes/tarefasRoutes');
-const estoqueRoutes = require('./routes/estoqueRoutes');
-const protocolosRoutes = require('./routes/protocolosRoutes');
-const reproducaoRoutes = require('./routes/reproducaoRoutes');
-const tourosRoutes = require('./routes/tourosRoutes');
-const financeiroRoutes = require('./routes/financeiroRoutes');
-const eventosRoutes = require('./routes/eventosRoutes');
-const bezerrasRoutes = require('./routes/bezerrasRoutes');
-const produtosRoutes = require('./routes/produtosRoutes');
-const examesRoutes = require('./routes/examesSanitariosRoutes');
-const racasRoutes = require('./routes/racasRoutes');
-const mockRoutes = require('./routes/mockRoutes');
-const rotasExtras = require('./routes/rotasExtras');
-const adminRoutes = require('./routes/adminRoutes');
-const apiV1Routes = require('./routes/apiV1');
-const maintenanceRoutes = require('./routes/maintenanceRoutes');
-const healthRoutes = require('./routes/healthRoutes');
-const healthDbRoutes = require('./routes/healthDbRoutes');
-const logger = require('./middleware/logger');
-const { initDB, getPool } = require('./db');
+import authRoutes from "./routes/auth.js";
+import { tenantContext } from "./middleware/tenantContext.js";
+import { backupOnWrite } from "./middleware/backupOnWrite.js";
 
-(async () => {
-  await initDB('system@gestao'); // roda applyMigrations/abre pool
-})();
+// __dirname em ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Carrega env do backend/.env e (fallback) da raiz
+dotenv.config({ path: path.join(__dirname, ".env") });
+dotenv.config({ path: path.join(__dirname, "..", ".env") });
+
+// Flags
+const BACKUP_ENABLED = process.env.BACKUP_ENABLED === "true";
+const PORT = Number(process.env.PORT || 3000);
 
 const app = express();
 app.use(cors());
-// aumenta o limite de tamanho do JSON para aceitar PDFs codificados em Base64 (até 10 mb)
-app.use(express.json({ limit: '10mb' }));
-app.use(logger);
-if (morgan) app.use(morgan('dev'));
+app.use(express.json({ limit: "10mb" }));
+app.use(morgan("dev"));
 
-// Logger focado só em /api/auth/*
+// Ativa multi-tenant/backup só quando quiser
+if (BACKUP_ENABLED) {
+  app.use(tenantContext);
+  app.use(backupOnWrite);
+}
+
+// Logger focado em /api/auth/*
 app.use((req, res, next) => {
   const start = Date.now();
-  res.on('finish', () => {
+  res.on("finish", () => {
     if (!/^\/api\/auth(\/|$)/.test(req.originalUrl)) return;
     console.log(JSON.stringify({
-      tag: 'AUTH',
+      tag: "AUTH",
       method: req.method,
       url: req.originalUrl,
       status: res.statusCode,
-      duration: Date.now() - start
+      duration: Date.now() - start,
     }));
   });
   next();
 });
 
-// Health check simples (útil para ver se o proxy está batendo mesmo)
-app.get('/api/health', (req, res) => {
-  res.json({ ok: true, ts: new Date().toISOString() });
+// Health check (confirma proxy e porta)
+app.get("/api/health", (req, res) => {
+  res.json({ ok: true, ts: new Date().toISOString(), backupEnabled: BACKUP_ENABLED });
 });
 
-// Servir arquivos estáticos usados pelo front (rotativos .txt)
-app.use('/api/data', express.static(path.join(__dirname, 'data')));
+// Servir arquivos estáticos usados pelo front (ex.: rotativos .txt, imagens do login)
+app.use("/api/data", express.static(path.join(__dirname, "data")));
 
-// 📁 Pasta para backups de dados excluídos
-fs.mkdirSync(path.join(__dirname, 'dadosExcluidos'), { recursive: true });
+// Garante pasta para dumps/recuperações manuais (compatível com seu antigo)
+fs.mkdirSync(path.join(__dirname, "dadosExcluidos"), { recursive: true });
 
-// Importa middleware de autenticação para uso seletivo nas rotas protegidas
-const authMiddleware = require('./middleware/authMiddleware');
+// Rotas da API
+// ⚠️ Mantenha por enquanto só as essenciais.
+// Quando for reativar módulos, monte-os aqui, já protegidos com auth/db conforme você recriar.
+app.use("/api/auth", authRoutes);
 
-// Em vez de aplicar autenticação e carregamento de banco globalmente (o que bloqueia
-// o acesso a páginas públicas como a tela de login), aplicamos por rota:
-// As rotas que exigem token e acesso ao banco recebem os middlewares na definição abaixo.
+// Bloqueio explícito para evitar o SPA “engolir” 404 de /api/*
+app.use("/api/*", (req, res) => {
+  return res.status(404).json({ error: "API route não encontrada" });
+});
 
-// 🌐 Rotas da API (prefixadas com /api para corresponder ao front-end)
-// Rotas protegidas: authMiddleware e dbMiddleware são aplicados
-app.use('/api/vacas', authMiddleware, dbMiddleware, vacasRoutes);
-// Rota temporária para evitar erro 500 no dashboard
-app.use('/api/animais', animaisRouter);
-app.use('/api/tarefas', authMiddleware, dbMiddleware, tarefasRoutes);
-app.use('/api/estoque', authMiddleware, dbMiddleware, estoqueRoutes);
-app.use('/api/bezerras', authMiddleware, dbMiddleware, bezerrasRoutes);
-app.use('/api/protocolos-reprodutivos', authMiddleware, dbMiddleware, protocolosRoutes);
-app.use('/api/reproducao', authMiddleware, dbMiddleware, reproducaoRoutes);
-app.use('/api/financeiro', authMiddleware, dbMiddleware, financeiroRoutes);
-app.use('/api/eventos', authMiddleware, dbMiddleware, eventosRoutes);
-app.use('/api/produtos', authMiddleware, dbMiddleware, produtosRoutes);
-app.use('/api/examesSanitarios', authMiddleware, dbMiddleware, examesRoutes);
-app.use('/api/racas', authMiddleware, dbMiddleware, racasRoutes);
-// nova rota para fichas de touros (pai dos animais)
-app.use('/api/touros', authMiddleware, dbMiddleware, tourosRoutes);
-// mantendo também a rota sem prefixo para compatibilidade com alguns pontos do front-end
-// Rotas não protegidas (mock e auth) não devem exigir token nem acessar banco
-app.use('/', mockRoutes);
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api', rotasExtras);
-app.use('/api', adminRoutes);
-// Rotas v1 com services reestruturados
-app.use(apiV1Routes);
-app.use(maintenanceRoutes);
-app.use(healthRoutes);
-app.use(healthDbRoutes);
-
-// 🧾 Servir frontend estático (build do React)
-const distPath = path.join(__dirname, '..', 'dist');
+// SPA estático (build do React). Em dev, o Vite cuida.
+const distPath = path.join(__dirname, "..", "dist");
 app.use(express.static(distPath));
 
-// ⛳ STUB temporário: não persistir config, só responder OK
-app.post('/api/configuracao', (req, res) => {
-  try {
-    // console.log('🛠️ [STUB CONFIG] ignorando payload', req.body);
-    return res.status(204).end();
-  } catch (e) {
-    return res.status(204).end();
+app.get("*", (req, res) => {
+  if (req.path.startsWith("/api/")) {
+    return res.status(404).json({ error: "API route não encontrada" });
   }
-});
-
-// Não deixe rotas /api/* caírem no SPA:
-app.use('/api/data/rotativos', (req, res) => {
-  return res.status(404).json({ error: 'Arquivo não encontrado (dev)' });
-});
-
-// Fallback do SPA protegido
-app.get('*', (req, res) => {
-  if (req.path.startsWith('/api/')) {
-    return res.status(404).json({ error: 'API route não encontrada' });
-  }
-  const indexPath = path.join(__dirname, '..', 'dist', 'index.html');
+  const indexPath = path.join(distPath, "index.html");
   if (fs.existsSync(indexPath)) {
     return res.sendFile(indexPath);
   }
-  // Em dev (vite) não tem dist; evita ENOENT
-  return res.status(200).send('<!doctype html><html><body><h1>Dev server ativo</h1></body></html>');
+  // Dev fallback (sem build)
+  return res
+    .status(200)
+    .send("<!doctype html><html><body><h1>Dev server ativo</h1></body></html>");
 });
 
-// Loga toda exceção não capturada em rotas
+// Handler de erro (por último)
 app.use((err, req, res, next) => {
-  console.error('API ERROR:', {
+  console.error("❌ ERRO:", {
     method: req.method,
     url: req.originalUrl,
     body: req.body,
     query: req.query,
-    error: err?.stack || err
+    stack: err?.stack || String(err),
   });
-  res.status(500).json({ error: 'Internal Server Error' });
+  res.status(500).json({ error: "Internal Server Error" });
 });
 
-// 🚀 Inicialização do servidor (somente se executado diretamente)
-const PORT = cfg.port;
-
-if (require.main === module) {
-  const enablePrePartoJob = process.env.ENABLE_PREPARTO_JOB === 'true';
-  if (enablePrePartoJob) {
-    const schedulePrePartoJob = require('./jobs/preparto');
-    schedulePrePartoJob();
-  }
-  const server = app.listen(PORT, () => {
-    console.log(`✅ Servidor rodando em http://localhost:${PORT}`);
-  });
-
-  server.on('error', (err) => {
-    if (err.code === 'EADDRINUSE') {
-      console.error(`❌ Porta ${PORT} já está em uso. Finalize o processo antigo ou aguarde a liberação da porta.`);
-      process.exit(1);
-    } else {
-      console.error('❌ Erro ao iniciar servidor:', err);
-      process.exit(1);
-    }
-  });
+// Jobs opcionais (somente se habilitar a flag)
+if (process.env.ENABLE_PREPARTO_JOB === "true") {
+  import("./jobs/preparto.js")
+    .then((m) => (typeof m.default === "function" ? m.default() : null))
+    .catch((e) => console.error("Erro ao iniciar job preparto:", e));
 }
 
-// Exporta para testes ou uso externo
-module.exports = app;
+const server = app.listen(PORT, () => {
+  console.log(`✅ API ON http://localhost:${PORT}`);
+});
+
+server.on("error", (err) => {
+  if (err.code === "EADDRINUSE") {
+    console.error(`❌ Porta ${PORT} já está em uso.`);
+    process.exit(1);
+  } else {
+    console.error("❌ Erro ao iniciar servidor:", err);
+    process.exit(1);
+  }
+});
+
+export default app;

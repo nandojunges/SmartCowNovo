@@ -1,12 +1,20 @@
+// src/pages/Auth/Cadastro.jsx
 import { useState, useEffect } from 'react';
 import Select from 'react-select';
-// Importa o componente de máscara de entrada sem especificar a versão.
-// A versão correta é definida em package.json (react-input-mask ^3.0.0),
-// e o Rollup/Vite não consegue resolver imports com “@versão” na string.
-import InputMask from 'react-input-mask';
 import { Eye, EyeOff } from 'lucide-react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import api from '../../api';
+
+// máscara simples (99) 99999-9999 / (99) 9999-9999
+function formatPhone(v) {
+  const d = v.replace(/\D/g, '').slice(0, 11);
+  if (d.length <= 10) {
+    return d.replace(/^(\d{0,2})(\d{0,4})(\d{0,4}).*$/, (_, a, b, c) =>
+      [a && `(${a})`, b, c && `-${c}`].filter(Boolean).join(' ')
+    );
+  }
+  return d.replace(/^(\d{2})(\d{5})(\d{0,4}).*$/, (_, a, b, c) => `(${a}) ${b}${c ? `-${c}` : ''}`);
+}
 
 export default function Cadastro() {
   const [form, setForm] = useState({
@@ -18,12 +26,14 @@ export default function Cadastro() {
     confirmar: '',
     plano: '',
   });
+
   const [formaPagamento, setFormaPagamento] = useState(null);
   const opcoesPagamento = [
     { value: 'pix', label: 'Pix' },
     { value: 'boleto', label: 'Boleto' },
     { value: 'cartao', label: 'Cartão' },
   ];
+
   const [erro, setErro] = useState('');
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [mostrarConfirmar, setMostrarConfirmar] = useState(false);
@@ -31,27 +41,24 @@ export default function Cadastro() {
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
-    const plano = searchParams.get('plano');
-    if (!plano) {
-      navigate('/escolher-plano');
-    } else {
-      setForm((f) => ({ ...f, plano }));
-    }
-  }, [searchParams, navigate]);
+    const plano = searchParams.get('plano') || 'teste_gratis';
+    setForm((f) => ({ ...f, plano }));
+  }, [searchParams]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErro('');
+
     if (!form.nome || !form.email || !form.telefone || !form.senha || !form.confirmar) {
       setErro('Preencha todos os campos obrigatórios.');
       return;
     }
-    const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email);
-    if (!emailValido) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
       setErro('E-mail inválido.');
       return;
     }
-    if (form.telefone.replace(/\D/g, '').length < 8) {
+    const soDigitos = form.telefone.replace(/\D/g, '');
+    if (soDigitos.length < 10) {
       setErro('Telefone inválido.');
       return;
     }
@@ -63,216 +70,236 @@ export default function Cadastro() {
       setErro('As senhas não conferem.');
       return;
     }
+
     try {
-      navigate('/verificar-codigo');
       await api.post('/auth/register', {
         nome: form.nome,
         nomeFazenda: form.fazenda,
         email: form.email,
-        telefone: form.telefone,
+        telefone: soDigitos,
         senha: form.senha,
         plano: form.plano,
         formaPagamento: form.plano === 'teste_gratis' ? null : formaPagamento?.value,
       });
+
       localStorage.setItem('emailCadastro', form.email);
-      localStorage.setItem(
-        'dadosCadastro',
-        JSON.stringify({
-          nome: form.nome,
-          nomeFazenda: form.fazenda,
-          email: form.email,
-          telefone: form.telefone,
-          senha: form.senha,
-          plano: form.plano,
-          formaPagamento: formaPagamento ? formaPagamento.value : null,
-        })
-      );
+      localStorage.setItem('dadosCadastro', JSON.stringify({
+        nome: form.nome,
+        nomeFazenda: form.fazenda,
+        email: form.email,
+        telefone: soDigitos,
+        senha: form.senha,
+        plano: form.plano,
+        formaPagamento: formaPagamento ? formaPagamento.value : null,
+      }));
+
+      navigate('/verificar-email', { replace: true });
     } catch (err) {
       setErro(err.response?.data?.message || 'Erro ao cadastrar');
     }
   };
+
+  // estilos compactos para caber sem scroll
+  const panelStyle = {
+    backgroundColor: 'rgba(255,255,255,0.88)',
+    padding: '18px',
+    borderRadius: '14px',
+    boxShadow: '0 4px 12px rgba(0,0,0,.10)',
+    width: 'min(92vw, 520px)',
+    maxWidth: '520px',
+  };
+  const labelStyle = { fontSize: '12px', marginBottom: '4px', color: '#374151', fontWeight: 500 };
+  const inputBase = { padding: '8px 12px', borderRadius: 10, border: '1px solid #ccc', fontSize: '0.92rem' };
+  const inputSenhaBase = { ...inputBase, padding: '8px 36px 8px 12px' };
 
   return (
     <div
       style={{
         minHeight: '100vh',
         width: '100%',
-        overflow: 'hidden',
         margin: 0,
         padding: 0,
         backgroundImage: "url('/icones/telafundo.png')",
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
       }}
     >
-      <div
-        style={{
-          backgroundColor: 'rgba(255, 255, 255, 0.85)',
-          padding: '40px',
-          borderRadius: '20px',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-          maxWidth: '500px',
-          width: '100%',
-        }}
-      >
-        <p className="text-center text-sm text-gray-600">Bem-vindo ao Gestão Leiteira</p>
-        <h2 className="text-xl font-bold text-center mb-4">Cadastro</h2>
+      <div style={panelStyle}>
+        <p style={{ textAlign: 'center', fontSize: '12px', color: '#6b7280', margin: 0 }}>
+          Bem-vindo ao Gestão Leiteira
+        </p>
+        <h2 style={{ textAlign: 'center', fontWeight: 700, fontSize: '18px', margin: '6px 0 10px' }}>
+          Cadastro
+        </h2>
+
         {erro && (
-          <div className="mb-2 text-red-600 text-sm text-center">{erro}</div>
+          <div style={{ marginBottom: 8, color: '#dc2626', fontSize: 13, textAlign: 'center' }}>
+            {erro}
+          </div>
         )}
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {/* Nome (linha inteira) */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
+            <label style={labelStyle}>Nome</label>
             <div className="input-senha-container">
               <input
                 type="text"
-                placeholder="Seu nome"
+                placeholder="Seu Nome"
                 value={form.nome}
                 onChange={(e) => setForm({ ...form, nome: e.target.value })}
                 className="input-senha"
-                style={{ textTransform: 'capitalize' }}
+                style={{ ...inputBase, textTransform: 'capitalize' }}
+                autoFocus
               />
             </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nome da Fazenda</label>
-            <div className="input-senha-container">
+
+          {/* Fazenda + Telefone (lado a lado) */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div>
+              <label style={labelStyle}>Nome da Fazenda</label>
               <input
                 type="text"
                 placeholder="Ex: Fazenda Esperança"
                 value={form.fazenda}
                 onChange={(e) => setForm({ ...form, fazenda: e.target.value })}
                 className="input-senha"
-                style={{ textTransform: 'capitalize' }}
+                style={{ ...inputBase, textTransform: 'capitalize' }}
               />
             </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
-            <div className="input-senha-container">
+            <div>
+              <label style={labelStyle}>Telefone</label>
               <input
-                type="email"
-                placeholder="seu@email.com"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                className="input-senha"
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
-            <div className="input-senha-container">
-              <InputMask
-                mask="(99) 99999-9999"
+                type="text"
+                inputMode="numeric"
+                placeholder="(99) 99999-9999"
                 value={form.telefone}
-                onChange={(e) => setForm({ ...form, telefone: e.target.value })}
-              >
-                {(inputProps) => (
-                  <input
-                    {...inputProps}
-                    type="text"
-                    placeholder="(99) 99999-9999"
-                    required
-                    className="input-senha"
-                  />
-                )}
-              </InputMask>
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Senha</label>
-            <div className="input-senha-container">
-              <input
-                type={mostrarSenha ? 'text' : 'password'}
-                placeholder="Crie uma senha"
-                value={form.senha}
-                onChange={(e) => setForm({ ...form, senha: e.target.value })}
-                className="input-senha input-senha-olho"
+                onChange={(e) => setForm((f) => ({ ...f, telefone: formatPhone(e.target.value) }))}
+                maxLength={16}
+                required
+                className="input-senha"
+                style={inputBase}
               />
-              <button
-                type="button"
-                onClick={() => setMostrarSenha(!mostrarSenha)}
-                className="botao-olho"
-              >
-                {mostrarSenha ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
             </div>
           </div>
+
+          {/* E-mail (linha inteira) */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Confirmar Senha</label>
+            <label style={labelStyle}>E-mail</label>
+            <input
+              type="email"
+              placeholder="seu@email.com"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              className="input-senha"
+              style={inputBase}
+            />
+          </div>
+
+          {/* Senha + Confirmar (lado a lado) */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             <div className="input-senha-container">
-              <input
-                type={mostrarConfirmar ? 'text' : 'password'}
-                placeholder="Repita a senha"
-                value={form.confirmar}
-                onChange={(e) => setForm({ ...form, confirmar: e.target.value })}
-                className="input-senha input-senha-olho"
-              />
-              <button
-                type="button"
-                onClick={() => setMostrarConfirmar(!mostrarConfirmar)}
-                className="botao-olho"
-              >
-                {mostrarConfirmar ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
+              <div style={{ width: '100%' }}>
+                <label style={labelStyle}>Senha</label>
+                <input
+                  type={mostrarSenha ? 'text' : 'password'}
+                  placeholder="Crie uma senha"
+                  value={form.senha}
+                  onChange={(e) => setForm({ ...form, senha: e.target.value })}
+                  className="input-senha input-senha-olho"
+                  style={inputSenhaBase}
+                />
+                <button
+                  type="button"
+                  onClick={() => setMostrarSenha(!mostrarSenha)}
+                  className="botao-olho"
+                  style={{ right: 10 }}
+                >
+                  {mostrarSenha ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            <div className="input-senha-container">
+              <div style={{ width: '100%' }}>
+                <label style={labelStyle}>Confirmar Senha</label>
+                <input
+                  type={mostrarConfirmar ? 'text' : 'password'}
+                  placeholder="Repita a senha"
+                  value={form.confirmar}
+                  onChange={(e) => setForm({ ...form, confirmar: e.target.value })}
+                  className="input-senha input-senha-olho"
+                  style={inputSenhaBase}
+                />
+                <button
+                  type="button"
+                  onClick={() => setMostrarConfirmar(!mostrarConfirmar)}
+                  className="botao-olho"
+                  style={{ right: 10 }}
+                >
+                  {mostrarConfirmar ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
             </div>
           </div>
+
+          {/* Plano + alterador (linha única, bem compacto) */}
           {form.plano && (
-            <div className="text-sm text-center">
+            <div style={{ textAlign: 'center', fontSize: 12 }}>
               Plano escolhido: <strong>{form.plano}</strong>{' '}
               <Link to="/escolher-plano" className="text-blue-600 hover:underline">
                 Alterar plano
               </Link>
             </div>
           )}
+
+          {/* Forma de pagamento, quando não for teste */}
           {form.plano && form.plano !== 'teste_gratis' && (
             <div>
+              <label style={labelStyle}>Forma de pagamento</label>
               <Select
                 options={opcoesPagamento}
                 placeholder="Escolha a forma de pagamento"
-                onChange={(selectedOption) => setFormaPagamento(selectedOption)}
+                onChange={setFormaPagamento}
                 value={formaPagamento}
                 menuPortalTarget={document.body}
                 menuPosition="fixed"
                 styles={{
-                  control: (provided) => ({
-                    ...provided,
+                  control: (p) => ({
+                    ...p,
+                    minHeight: 36,
+                    height: 36,
                     backgroundColor: 'white',
                     borderColor: '#ccc',
-                    borderRadius: '10px',
-                    padding: '2px 4px',
-                    fontSize: '14px',
+                    borderRadius: 10,
+                    fontSize: 14,
                     boxShadow: 'none',
                   }),
-                  placeholder: (provided) => ({
-                    ...provided,
-                    color: '#999',
-                  }),
-                  menuPortal: (base) => ({
-                    ...base,
-                    zIndex: 9999,
-                  }),
+                  valueContainer: (p) => ({ ...p, padding: '0 8px' }),
+                  indicatorsContainer: (p) => ({ ...p, height: 36 }),
+                  dropdownIndicator: (p) => ({ ...p, padding: '0 8px' }),
+                  placeholder: (p) => ({ ...p, color: '#888' }),
+                  menuPortal: (b) => ({ ...b, zIndex: 9999 }),
                 }}
               />
             </div>
           )}
+
           <button
             type="submit"
             style={{
               backgroundColor: '#1565c0',
               color: '#fff',
-              borderRadius: '25px',
-              padding: '10px 20px',
-              fontWeight: 'bold',
+              borderRadius: 22,
+              padding: '10px 18px',
+              fontWeight: 700,
               border: 'none',
-              width: '60%',
-              marginTop: '20px',
-              marginLeft: 'auto',
-              marginRight: 'auto',
+              width: 200,
+              margin: '8px auto 0',
             }}
             className="hover:bg-[#0d47a1]"
           >
@@ -283,4 +310,3 @@ export default function Cadastro() {
     </div>
   );
 }
-

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
-import jwt_decode from 'jwt-decode';
+import { jwtDecode } from "jwt-decode";
 import api from '../../api';
 import LoginInfoRotativo from './LoginInfoRotativo';
 
@@ -69,7 +69,7 @@ export default function Login() {
 
         const decoded = jwt_decode(token);
         const isAdmin = decoded?.perfil === 'admin';
-        navigate(isAdmin ? '/admin' : '/inicio');
+        navigate(isAdmin ? '/admin' : '/inicio', { replace: true });
       } else {
         alert('Token não recebido.');
       }
@@ -118,24 +118,25 @@ export default function Login() {
             fontSize: '3rem',
             fontWeight: 700,
             margin: 0,
-            marginBottom: '5px', // <-- Aqui você controla o espaço abaixo do título
+            marginBottom: '5px',
           }}
         >
           SmartMilk - GESTÃO LEITEIRA
         </h1>
-  <h2
-    style={{
-      fontFamily: "'Dancing Script', cursive",
-      fontSize: '2rem',
-      fontWeight: 500,
-      color: '#ffd43b',
-      textShadow: '1px 1px 3px rgba(0,0,0,0.4)',
-      margin: 0,
-    }}
-  >
-    Feito por quem vive no campo.
-  </h2>
-</div>
+        <h2
+          style={{
+            fontFamily: "'Dancing Script', cursive",
+            fontSize: '2rem',
+            fontWeight: 500,
+            color: '#ffd43b',
+            textShadow: '1px 1px 3px rgba(0,0,0,0.4)',
+            margin: 0,
+          }}
+        >
+          Feito por quem vive no campo.
+        </h2>
+      </div>
+
       <div
         style={{
           display: 'flex',
@@ -153,9 +154,8 @@ export default function Login() {
         >
           <LoginInfoRotativo />
         </motion.div>
-        <div
-          style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}
-        >
+
+        <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <motion.div
             initial={{ opacity: 0, x: -100 }}
             animate={{ opacity: 1, x: 0 }}
@@ -171,19 +171,20 @@ export default function Login() {
                 width: '100%',
               }}
             >
-                          <p
-  style={{
-    fontSize: '1.5rem',         // Tamanho da fonte
-    fontWeight: 600,            // Peso da fonte
-    fontFamily: "'Poppins', sans-serif", // Fonte (troque se quiser)
-    marginBottom: '10px',       // Espaço abaixo do texto
-    textAlign: 'center',        // Centralização
-  }}
->
-  Bem-vindo ao SmartMilk!
-</p>
+              <p
+                style={{
+                  fontSize: '1.5rem',
+                  fontWeight: 600,
+                  fontFamily: "'Poppins', sans-serif",
+                  marginBottom: '10px',
+                  textAlign: 'center',
+                }}
+              >
+                Bem-vindo ao SmartMilk!
+              </p>
               <h2 className="text-xl font-bold text-center mb-4" style={{ color: '#1e3a8a' }}>Login</h2>
-              <form onSubmit={handleSubmit} onKeyDown={(e) => e.key === 'Enter' && handleSubmit(e)} className="flex flex-col gap-4">
+
+              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                   <div className="input-senha-container">
@@ -195,9 +196,7 @@ export default function Login() {
                       className="input-senha"
                     />
                   </div>
-                  {erroEmail && (
-                    <p className="text-red-600 text-sm mt-1">{erroEmail}</p>
-                  )}
+                  {erroEmail && <p className="text-red-600 text-sm mt-1">{erroEmail}</p>}
                 </div>
 
                 <div>
@@ -218,9 +217,7 @@ export default function Login() {
                       {mostrarSenha ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
-                  {erroSenha && (
-                    <p className="text-red-600 text-sm mt-1">{erroSenha}</p>
-                  )}
+                  {erroSenha && <p className="text-red-600 text-sm mt-1">{erroSenha}</p>}
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -234,24 +231,25 @@ export default function Login() {
                 </div>
 
                 <button
-  type="submit"
-  style={{
-    background: 'linear-gradient(90deg, #1e3a8a, #3b82f6)', // azul gradiente
-    color: '#fff',
-    padding: '12px 24px',
-    borderRadius: '30px',
-    border: 'none',
-    fontSize: '1.1rem',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.3s ease',
-    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-  }}
-  onMouseOver={(e) => (e.target.style.background = '#1e40af')}
-  onMouseOut={(e) => (e.target.style.background = 'linear-gradient(90deg, #1e3a8a, #3b82f6)')}
->
-  Entrar
-</button>
+                  type="submit"
+                  style={{
+                    background: 'linear-gradient(90deg, #1e3a8a, #3b82f6)',
+                    color: '#fff',
+                    padding: '12px 24px',
+                    borderRadius: '30px',
+                    border: 'none',
+                    fontSize: '1.1rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                  }}
+                  onMouseOver={(e) => (e.currentTarget.style.background = '#1e40af')}
+                  onMouseOut={(e) => (e.currentTarget.style.background = 'linear-gradient(90deg, #1e3a8a, #3b82f6)')}
+                  disabled={carregando}
+                >
+                  {carregando ? 'Entrando…' : 'Entrar'}
+                </button>
 
                 <div className="text-right">
                   <Link to="/esqueci-senha" className="text-sm text-blue-600 hover:underline">
@@ -262,10 +260,7 @@ export default function Login() {
 
               <p className="text-center text-sm text-gray-600 mt-4 font-light">
                 Não tem conta?{' '}
-                <Link
-                  to="/escolher-plano"
-                  className="text-blue-600 hover:underline"
-                >
+                <Link to="/escolher-plano" className="text-blue-600 hover:underline">
                   Cadastrar-se
                 </Link>
               </p>
@@ -273,6 +268,7 @@ export default function Login() {
           </motion.div>
         </div>
       </div>
+
       <footer
         style={{
           backgroundColor: 'rgba(255, 255, 255, 0.6)',

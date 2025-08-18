@@ -1,156 +1,95 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Tailwind v4 */
+@import "tailwindcss";
 
-:root {
-  --fonte-primaria: 'Poppins';
-  --tamanho-fonte-base: 16px;
+/* === Base e variáveis === */
+:root{
+  --fonte-primaria: 'Poppins', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  --font-base: 15px;             /* <<< escala global (era 16) */
   --tamanho-icone-aviso: 28px;
 }
 
-body {
-  font-family: var(--fonte-primaria, 'Poppins');
-  font-size: var(--tamanho-fonte-base, 16px);
-  background-image: url('/imagens/fundo-campo.jpg');
+/* Em Tailwind v4, ajuste a FONTE no html (afeta rem) */
+html{ font-size: var(--font-base); }
+
+/* Em telas bem grandes, volta pra 16px */
+@media (min-width: 1536px){
+  :root{ --font-base: 16px; }
+}
+
+*{ box-sizing: border-box; }
+
+body{
+  font-family: var(--fonte-primaria);
+  font-size: 1rem;               /* segue o html */
+  background-image: url('/icones/telafundo.png');
   background-size: cover;
   background-position: center;
   margin: 0;
   padding: 0;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* === Animação utilitária === */
+@keyframes fadeIn{
+  from{ opacity:0; transform: translateY(10px); }
+  to{   opacity:1; transform: translateY(0); }
+}
+.fade-in{ animation: fadeIn .5s ease-out; }
+
+/* === Avisos / cartões === */
+.alerta-estoque{
+  background-color:#fff8e1;
+  border-left:4px solid #ffc107;
+  padding:10px 14px;
+  font-weight:500;
+  display:flex; align-items:center; gap:8px; min-height:40px; justify-content:center;
+}
+.icone-tarefa{ width:var(--tamanho-icone-aviso,28px); height:var(--tamanho-icone-aviso,28px); margin-right:10px; }
+
+.card-botao{
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+  padding:20px; width:150px; height:120px;
+  background:#f3f4f6; border-radius:16px; border:1px solid transparent;
+  box-shadow:0 4px 10px rgba(0,0,0,.08);
+  cursor:pointer; transition: transform .2s ease, box-shadow .2s ease;
+}
+.card-botao:hover{ transform: translateY(-4px); box-shadow:0 6px 14px rgba(0,0,0,.12); }
+.card-botao i{ font-size:28px; color:#3c3c3c; }
+.card-botao span{ font-weight:600; font-size:14px; color:#333; }
+.card-botao.ativo{ box-shadow:0 6px 14px rgba(30,64,175,.2); background:#fff; border:1px solid #1e40af; }
+
+/* === Imagem de perfil === */
+.foto-perfil-circular{ width:120px; height:120px; border-radius:9999px; object-fit:cover; }
+
+/* === Containers comuns (login/cadastro) === */
+.modal-login-container{
+  background:#fff; border-radius:1rem; box-shadow:0 0 20px rgba(0,0,0,.1);
+  padding:2rem; width:100%; max-width:460px;       /* <<< mais “slim” */
 }
 
-.fade-in {
-  animation: fadeIn 0.5s ease-out;
+/* === Campos com ícone de olho === */
+.input-senha-container{ width:100%; position:relative; display:flex; }
+
+.input-senha,
+.input-padrao{
+  flex:1; width:100%;
+  height:44px;                    /* <<< fixa a altura */
+  padding:10px 40px 10px 14px;
+  border-radius:10px; border:1px solid #ccc; background:#fff;
+  font-size:.95rem; font-family:var(--fonte-primaria);
 }
 
-.alerta-estoque {
-  background-color: #fff8e1;
-  border-left: 4px solid #ffc107;
-  padding: 10px 14px;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 40px;
-  justify-content: center;
+.input-padrao{ padding:10px 14px; }
+
+.botao-olho{
+  position:absolute; right:12px; top:50%; transform:translateY(-50%);
+  background:none; border:none; cursor:pointer; font-size:18px; color:#555;
 }
+.botao-olho:hover{ color:#333; }
 
-.icone-tarefa {
-  width: var(--tamanho-icone-aviso, 28px);
-  height: var(--tamanho-icone-aviso, 28px);
-  margin-right: 10px;
-}
+button:disabled{ opacity:.6; cursor:not-allowed; }
 
-.card-botao {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 20px;
-  width: 150px;
-  height: 120px;
-  background-color: #f3f4f6;
-  border-radius: 16px;
-  border: 1px solid transparent;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.card-botao:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
-}
-
-.card-botao i {
-  font-size: 28px;
-  color: #3c3c3c;
-}
-
-.card-botao span {
-  font-weight: 600;
-  font-size: 14px;
-  color: #333;
-}
-
-.card-botao.ativo {
-  box-shadow: 0 6px 14px rgba(30, 64, 175, 0.2);
-  background-color: #ffffff;
-  border: 1px solid #1e40af;
-}
-
-/* Imagem de perfil exibida nos ajustes */
-.foto-perfil-circular {
-  width: 120px;
-  height: 120px;
-  border-radius: 9999px;
-  object-fit: cover;
-}
-
-/* Estilização do container central utilizado em Login e Cadastro */
-.modal-login-container {
-  background: white;
-  border-radius: 1rem;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-  padding: 2rem;
-  width: 100%;
-  max-width: 450px;
-}
-
-/* Campo de senha com ícone de mostrar/ocultar */
-
-/* Container para campos de senha com o ícone de exibir/ocultar */
-.input-senha-container {
-  width: 100%;
-  position: relative;
-  display: flex;
-}
-
-.input-senha {
-  flex: 1;
-  width: 100%;
-  padding: 10px 40px 10px 14px; /* espaço para o ícone */
-  border-radius: 10px;
-  border: 1px solid #ccc;
-  background-color: #fff;
-  font-size: 0.95rem;
-  font-family: var(--fonte-primaria, 'Poppins');
-}
-
-/* Campo padrão utilizado nos formulários de autenticação */
-.input-padrao {
-  width: 100%;
-  padding: 10px 14px;
-  border-radius: 10px;
-  border: 1px solid #ccc;
-  background-color: #fff;
-  font-size: 0.95rem;
-  font-family: var(--fonte-primaria, 'Poppins');
-}
-
-.botao-olho {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 18px;
-  color: #555;
-}
-
-.botao-olho:hover {
-  color: #333;
+/* === Grid do “Escolher Plano” (desktop = 4 colunas) === */
+.grid-planos{ display:grid; gap:20px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+@media (min-width:1280px){
+  .grid-planos{ grid-template-columns: repeat(4, 1fr) !important; }
 }

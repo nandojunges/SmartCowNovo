@@ -1,15 +1,12 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const fs = require('fs');
-const path = require('path');
 const { pool } = require('../db');             // ← usando Postgres
 const emailUtils = require('../utils/email');  // Zoho ajustado
+const { ensureTenant } = require('../db/tenancy');
 
 const SECRET = process.env.JWT_SECRET || 'segredo';
 const TTL_MIN = Number(process.env.VERIFICATION_TTL_MINUTES || 3);
 
-// sanitiza e-mail para nome de schema/pasta
-const emailSlug = (e) => String(e || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g,'').slice(0,48) || 'tenant';
 const norm = (e) => String(e || '').trim().toLowerCase();
 const genCode = () => String(Math.floor(Math.random() * 1_000_000)).padStart(6, '0');
 
@@ -109,6 +106,9 @@ async function cadastro(req, res) {
         return res.status(502).json({ message: 'Falha ao enviar e-mail de verificação.' });
       }
       await client.query('COMMIT');
+      const { schema, backupDir } = await ensureTenant(emailLC);
+      await pool.query('UPDATE usuarios SET tenant_schema = $1 WHERE id = $2', [schema, u.id]);
+      console.log('Tenant criado:', { schema, backupDir });
       return res.status(200).json({ message: 'Novo código enviado.' });
     }
 
@@ -132,7 +132,11 @@ async function cadastro(req, res) {
     }
 
     await client.query('COMMIT');
-    return res.status(201).json({ message: 'Código enviado. Verifique o e-mail.', userId: ins.rows[0].id });
+    const userId = ins.rows[0].id;
+    const { schema, backupDir } = await ensureTenant(emailLC);
+    await pool.query('UPDATE usuarios SET tenant_schema = $1 WHERE id = $2', [schema, userId]);
+    console.log('Tenant criado:', { schema, backupDir });
+    return res.status(201).json({ message: 'Código enviado. Verifique o e-mail.', userId });
   } catch (error) {
     console.error('💥 [CADASTRO] erro inesperado:', error);
     return res.status(500).json({ error: 'Erro ao cadastrar usuário.' });
@@ -183,17 +187,11 @@ async function verificarEmail(req, res) {
       [u.id]
     );
 
-    // Cria schema + pasta de backup por e-mail (nomeada pelo slug do e-mail)
-    const schemaName = `t_${emailSlug(emailLC)}`;
-    await client.query(`CREATE SCHEMA IF NOT EXISTS "${schemaName}"`);
-    await client.query(`UPDATE usuarios SET tenant_schema = $1 WHERE id = $2`, [schemaName, u.id]);
-    const backupRoot = process.env.BACKUP_ROOT || path.resolve('./backups');
-    const backupDir = path.join(backupRoot, emailSlug(emailLC));
-    fs.mkdirSync(backupDir, { recursive: true });
-
     await client.query('COMMIT');
-    console.log(`🔐 Verificação OK: ${emailLC} | schema=${schemaName} | backup=${backupDir}`);
-    return res.json({ sucesso: true, tenant_schema: schemaName });
+    const { schema, backupDir } = await ensureTenant(emailLC);
+    await pool.query('UPDATE usuarios SET tenant_schema = $1 WHERE id = $2', [schema, u.id]);
+    console.log(`🔐 Verificação OK: ${emailLC} | schema=${schema} | backup=${backupDir}`);
+    return res.json({ sucesso: true, tenant_schema: schema });
   } catch (err) {
     console.error('💥 [VERIFICAR] erro inesperado:', err);
     return res.status(500).json({ erro: 'Erro interno no servidor.' });
