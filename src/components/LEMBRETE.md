@@ -18,3 +18,5 @@ gunzip -c backups/tenants/<schema>/<data>/<arquivo>.sql.gz | psql -h $PGHOST -U 
 Pré-requisito: ter o pg_dump disponível (vem com a instalação do PostgreSQL).
 
 npm run dev:all
+
+npm --prefix backend run reset-db

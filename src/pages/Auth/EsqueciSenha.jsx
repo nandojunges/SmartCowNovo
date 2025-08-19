@@ -16,13 +16,18 @@ export default function EsqueciSenha() {
 
   const enviarCodigo = async (e) => {
     e.preventDefault();
+    if (!email.trim()) {
+      toast.error('Informe seu e-mail.');
+      return;
+    }
     setEnviando(true);
     try {
-      await api.post('/auth/forgot-password', { email });
+      await api.post('auth/forgot-password', { email: email.trim().toLowerCase() });
       setEmailEnviado(true);
       toast.success('Código enviado ao e-mail.');
     } catch (err) {
-      toast.error('Erro ao enviar e-mail');
+      const msg = err.response?.data?.error || err.response?.data?.message || 'Erro ao enviar e-mail';
+      toast.error(msg);
     } finally {
       setEnviando(false);
     }
@@ -30,17 +35,27 @@ export default function EsqueciSenha() {
 
   const confirmarCodigo = async (e) => {
     e.preventDefault();
+    if (!codigo.trim()) {
+      toast.error('Informe o código.');
+      return;
+    }
+    if (!novaSenha.trim() || novaSenha.trim().length < 6) {
+      toast.error('A nova senha deve ter pelo menos 6 caracteres.');
+      return;
+    }
     setEnviandoConfirmacao(true);
     try {
-      await api.post('/auth/verify-code', {
+      // ✅ rota e payload corretos: reset-password com { email, code, novaSenha }
+      await api.post('auth/reset-password', {
         email: email.trim().toLowerCase(),
-        codigo: String(codigo).trim(),
-        senha: novaSenha,
+        code: String(codigo).trim(),
+        novaSenha: novaSenha.trim(),
       });
       toast.success('Senha redefinida com sucesso!');
       navigate('/login');
     } catch (err) {
-      toast.error('Código incorreto ou expirado');
+      const msg = err.response?.data?.error || err.response?.data?.message || 'Código incorreto ou expirado';
+      toast.error(msg);
     } finally {
       setEnviandoConfirmacao(false);
     }
@@ -74,89 +89,93 @@ export default function EsqueciSenha() {
         }}
       >
         <h2 className="text-xl font-bold text-center mb-4">Recuperar Senha</h2>
-          {!emailEnviado ? (
-            <form onSubmit={enviarCodigo} className="flex flex-col gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <div className="input-senha-container">
-                  <input
-                    type="email"
-                    placeholder="seu@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="input-senha"
-                  />
-                </div>
-              </div>
-              <button
-                type="submit"
-                style={{
-                  backgroundColor: '#1565c0',
-                  color: '#fff',
-                  borderRadius: '25px',
-                  padding: '10px 20px',
-                  fontWeight: 'bold',
-                  border: 'none',
-                  width: '60%',
-                  marginTop: '20px',
-                  marginLeft: 'auto',
-                  marginRight: 'auto',
-                }}
-                disabled={enviando}
-                className="hover:bg-[#0d47a1] disabled:opacity-60"
-              >
-                {enviando ? 'Enviando...' : 'Recuperar Senha'}
-              </button>
-            </form>
-          ) : (
-            <form onSubmit={confirmarCodigo} className="flex flex-col gap-4">
-              <p className="text-center text-green-700">Código enviado ao e-mail</p>
+
+        {!emailEnviado ? (
+          <form onSubmit={enviarCodigo} className="flex flex-col gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
               <div className="input-senha-container">
                 <input
-                  type="text"
-                  placeholder="Código"
-                  value={codigo}
-                  onChange={(e) => setCodigo(e.target.value)}
+                  type="email"
+                  placeholder="seu@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="input-senha"
                 />
               </div>
-                <div className="input-senha-container">
-                  <input
-                    type={mostrarNovaSenha ? 'text' : 'password'}
-                    placeholder="Nova senha"
-                    value={novaSenha}
-                    onChange={(e) => setNovaSenha(e.target.value)}
-                    className="input-senha input-senha-olho"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setMostrarNovaSenha(!mostrarNovaSenha)}
-                    className="botao-olho"
-                  >
-                    {mostrarNovaSenha ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
+            </div>
+            <button
+              type="submit"
+              style={{
+                backgroundColor: '#1565c0',
+                color: '#fff',
+                borderRadius: '25px',
+                padding: '10px 20px',
+                fontWeight: 'bold',
+                border: 'none',
+                width: '60%',
+                marginTop: '20px',
+                marginLeft: 'auto',
+                marginRight: 'auto',
+              }}
+              disabled={enviando}
+              className="hover:bg-[#0d47a1] disabled:opacity-60"
+            >
+              {enviando ? 'Enviando...' : 'Recuperar Senha'}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={confirmarCodigo} className="flex flex-col gap-4">
+            <p className="text-center text-green-700">Código enviado ao e-mail</p>
+
+            <div className="input-senha-container">
+              <input
+                type="text"
+                placeholder="Código"
+                value={codigo}
+                onChange={(e) => setCodigo(e.target.value)}
+                className="input-senha"
+              />
+            </div>
+
+            <div className="input-senha-container">
+              <input
+                type={mostrarNovaSenha ? 'text' : 'password'}
+                placeholder="Nova senha"
+                value={novaSenha}
+                onChange={(e) => setNovaSenha(e.target.value)}
+                className="input-senha input-senha-olho"
+              />
               <button
-                type="submit"
-                style={{
-                  backgroundColor: '#1565c0',
-                  color: '#fff',
-                  borderRadius: '25px',
-                  padding: '10px 20px',
-                  fontWeight: 'bold',
-                  border: 'none',
-                  width: '60%',
-                  marginTop: '20px',
-                  marginLeft: 'auto',
-                  marginRight: 'auto',
-                }}
-                disabled={enviandoConfirmacao}
-                className="hover:bg-[#0d47a1] disabled:opacity-60"
+                type="button"
+                onClick={() => setMostrarNovaSenha(!mostrarNovaSenha)}
+                className="botao-olho"
               >
-                {enviandoConfirmacao ? 'Enviando...' : 'Resetar Senha'}
+                {mostrarNovaSenha ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
-            </form>
-          )}
+            </div>
+
+            <button
+              type="submit"
+              style={{
+                backgroundColor: '#1565c0',
+                color: '#fff',
+                borderRadius: '25px',
+                padding: '10px 20px',
+                fontWeight: 'bold',
+                border: 'none',
+                width: '60%',
+                marginTop: '20px',
+                marginLeft: 'auto',
+                marginRight: 'auto',
+              }}
+              disabled={enviandoConfirmacao}
+              className="hover:bg-[#0d47a1] disabled:opacity-60"
+            >
+              {enviandoConfirmacao ? 'Enviando...' : 'Resetar Senha'}
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );

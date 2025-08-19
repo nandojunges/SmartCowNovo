@@ -1,8 +1,9 @@
+// src/pages/Auth/Login.jsx
 import { useState, useEffect } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
-import { jwtDecode } from "jwt-decode";
+import { jwtDecode } from 'jwt-decode'; // ✅ usar jwtDecode
 import api from '../../api';
 import LoginInfoRotativo from './LoginInfoRotativo';
 
@@ -29,9 +30,8 @@ export default function Login() {
   const validar = () => {
     const emailTrim = email.trim();
     const senhaTrim = senha.trim();
-    setEmail(emailTrim);
-    setSenha(senhaTrim);
     let ok = true;
+
     if (!emailRegex.test(emailTrim)) {
       setErroEmail('Email inválido');
       ok = false;
@@ -50,35 +50,56 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validar()) return;
+
     try {
       setCarregando(true);
-      const res = await api.post('/auth/login', {
-        email: email.trim(),
+
+      // ⚠️ sem barra inicial para evitar // na URL; normaliza email
+      const { data, status } = await api.post('auth/login', {
+        email: email.trim().toLowerCase(),
         senha: senha.trim(),
       });
 
-      if (res.status === 200 && res.data?.token) {
-        const token = res.data.token;
+      if (status === 200 && data?.token) {
+        const token = data.token;
+        const user = data.user;
+
+        // (opcional) decodifica, mas sem quebrar o fluxo se falhar
+        let decoded;
+        try {
+          decoded = jwtDecode(token); // ✅ agora certo
+        } catch {
+          decoded = null;
+        }
+
+        const isAdmin =
+          user?.perfil === 'admin' ||
+          decoded?.perfil === 'admin' ||
+          false;
+
+        // ✅ só agora salvo o token, depois que tudo deu certo
         localStorage.setItem('token', token);
+        if (user) localStorage.setItem('user', JSON.stringify(user));
 
         if (lembrar) {
-          localStorage.setItem('rememberEmail', email.trim());
+          localStorage.setItem('rememberEmail', email.trim().toLowerCase());
         } else {
           localStorage.removeItem('rememberEmail');
         }
 
-        const decoded = jwt_decode(token);
-        const isAdmin = decoded?.perfil === 'admin';
         navigate(isAdmin ? '/admin' : '/inicio', { replace: true });
       } else {
         alert('Token não recebido.');
       }
     } catch (err) {
-      alert(
-        err.response?.data?.erro ||
-          err.response?.data?.message ||
-          'Email ou senha incorretos.'
-      );
+      // garante que nenhum token residual fique salvo
+      localStorage.removeItem('token');
+
+      const msg =
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        'Email ou senha incorretos.';
+      alert(msg);
     } finally {
       setCarregando(false);
     }

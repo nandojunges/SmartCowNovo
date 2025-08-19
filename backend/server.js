@@ -16,12 +16,27 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Carrega env do backend/.env e (fallback) da raiz
-dotenv.config({ path: path.join(__dirname, ".env") });
-dotenv.config({ path: path.join(__dirname, "..", ".env") });
+const envBackend = path.join(__dirname, ".env");
+const envRoot = path.join(__dirname, "..", ".env");
+dotenv.config({ path: envBackend });
+dotenv.config({ path: envRoot });
+
+// LOG de conferência do .env (ajuda a diagnosticar SMTP 500)
+const mask = (v) => (v ? "set" : "missing");
+if (process.env.LOG_ENV_PATH === "true") {
+  console.log("ENV paths tried:", { backendEnv: envBackend, rootEnv: envRoot });
+}
+console.log("SMTP CONFIG =>", {
+  host: process.env.SMTP_HOST,
+  port: process.env.SMTP_PORT,
+  secure: process.env.SMTP_SECURE,
+  EMAIL_REMETENTE: mask(process.env.EMAIL_REMETENTE),
+  EMAIL_SENHA_APP: mask(process.env.EMAIL_SENHA_APP),
+});
 
 // Flags
 const BACKUP_ENABLED = process.env.BACKUP_ENABLED === "true";
-const PORT = Number(process.env.PORT || 3000);
+const PORT = Number(process.env.PORT || 3001);
 
 const app = express();
 app.use(cors());
@@ -52,7 +67,18 @@ app.use((req, res, next) => {
 
 // Health check (confirma proxy e porta)
 app.get("/api/health", (req, res) => {
-  res.json({ ok: true, ts: new Date().toISOString(), backupEnabled: BACKUP_ENABLED });
+  res.json({
+    ok: true,
+    ts: new Date().toISOString(),
+    backupEnabled: BACKUP_ENABLED,
+    smtp: {
+      host: process.env.SMTP_HOST || null,
+      port: process.env.SMTP_PORT || null,
+      secure: process.env.SMTP_SECURE || null,
+      EMAIL_REMETENTE: mask(process.env.EMAIL_REMETENTE),
+      EMAIL_SENHA_APP: mask(process.env.EMAIL_SENHA_APP),
+    },
+  });
 });
 
 // Servir arquivos estáticos usados pelo front (ex.: rotativos .txt, imagens do login)

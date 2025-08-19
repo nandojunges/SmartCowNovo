@@ -5,24 +5,17 @@ import { fileURLToPath, URL } from "node:url";
 
 export default defineConfig({
   plugins: [react()],
-  resolve: {
-    alias: {
-      "@": fileURLToPath(new URL("./src", import.meta.url)),
-    },
-  },
+  resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
   server: {
-    port: 5173, // opcional; pode remover se não precisar fixar
+    port: 5173,
     proxy: {
       "/api": {
-        // ⚠️ ajuste para a porta em que seu backend está rodando
-        target: "http://localhost:3001",
+        target: "http://127.0.0.1:3001", // 👈 força IPv4
         changeOrigin: true,
         secure: false,
         ws: false,
       },
     },
   },
-  build: {
-    outDir: "dist",
-  },
+  build: { outDir: "dist" },
 });

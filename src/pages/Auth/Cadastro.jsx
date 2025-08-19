@@ -72,30 +72,30 @@ export default function Cadastro() {
     }
 
     try {
-      await api.post('/auth/register', {
-        nome: form.nome,
-        nomeFazenda: form.fazenda,
-        email: form.email,
-        telefone: soDigitos,
+      const emailTrim = form.email.trim().toLowerCase();
+
+      // ⚠️ Chame SEM barra inicial para respeitar baseURL '/api/'
+      // ⚠️ Envie apenas os campos que o backend espera: { email, senha }
+      await api.post('auth/register', {
+        email: emailTrim,
         senha: form.senha,
-        plano: form.plano,
-        formaPagamento: form.plano === 'teste_gratis' ? null : formaPagamento?.value,
       });
 
-      localStorage.setItem('emailCadastro', form.email);
-      localStorage.setItem('dadosCadastro', JSON.stringify({
-        nome: form.nome,
-        nomeFazenda: form.fazenda,
-        email: form.email,
-        telefone: soDigitos,
-        senha: form.senha,
-        plano: form.plano,
-        formaPagamento: formaPagamento ? formaPagamento.value : null,
-      }));
+      // O fluxo de verificação só precisa do e-mail
+      localStorage.setItem('emailCadastro', emailTrim);
+
+      // (Opcional) Se quiser manter outros dados para UX futura, salve num namespace diferente
+      // localStorage.setItem('preCadastroInfo', JSON.stringify({
+      //   nome: form.nome,
+      //   nomeFazenda: form.fazenda,
+      //   telefone: soDigitos,
+      //   plano: form.plano,
+      //   formaPagamento: form.plano === 'teste_gratis' ? null : formaPagamento?.value,
+      // }));
 
       navigate('/verificar-email', { replace: true });
     } catch (err) {
-      setErro(err.response?.data?.message || 'Erro ao cadastrar');
+      setErro(err.response?.data?.error || err.response?.data?.message || 'Erro ao cadastrar');
     }
   };
 
@@ -247,7 +247,7 @@ export default function Cadastro() {
             </div>
           </div>
 
-          {/* Plano + alterador (linha única, bem compacto) */}
+          {/* Plano + alterador (linha única) */}
           {form.plano && (
             <div style={{ textAlign: 'center', fontSize: 12 }}>
               Plano escolhido: <strong>{form.plano}</strong>{' '}
@@ -257,7 +257,7 @@ export default function Cadastro() {
             </div>
           )}
 
-          {/* Forma de pagamento, quando não for teste */}
+          {/* Forma de pagamento (quando não for teste) */}
           {form.plano && form.plano !== 'teste_gratis' && (
             <div>
               <label style={labelStyle}>Forma de pagamento</label>

@@ -44,82 +44,82 @@ export async function getAnimais({ estado, q, page, limit } = {}) {
   if (q) params.q = q;
   if (page) params.page = page;
   if (limit) params.limit = limit;
-  const res = await api.get(p('v1/animais'), { params });
+  const res = await api.get(p('/animais'), { params });
   return res.data;
 }
 
 export async function getAnimal(id) {
-  const res = await api.get(p(`v1/animais/${id}`));
+  const res = await api.get(p(`/animais/${id}`));
   return res.data;
 }
 
 export async function criarAnimal(data) {
-  const res = await api.post(p('v1/animais'), data);
+  const res = await api.post(p('/animais'), data);
   return res.data;
 }
 
 export async function atualizarAnimal(id, data) {
-  const res = await api.put(p(`v1/animais/${id}`), data);
+  const res = await api.put(p(`/animais/${id}`), data);
   return res.data;
 }
 
 export async function removerAnimal(id) {
-  const res = await api.delete(p(`v1/animais/${id}`));
+  const res = await api.delete(p(`/animais/${id}`));
   return res.data;
 }
 
 /* ================== REPRODUÇÃO ================== */
 export async function inserirInseminacao(id, data) {
-  const res = await api.post(p(`v1/reproducao/${id}/inseminacoes`), data);
+  const res = await api.post(p(`/reproducao/${id}/inseminacoes`), data);
   return res.data;
 }
 
 export async function inserirDiagnostico(id, data) {
-  const res = await api.post(p(`v1/reproducao/${id}/diagnosticos`), data);
+  const res = await api.post(p(`/reproducao/${id}/diagnosticos`), data);
   return res.data;
 }
 
 export async function registrarParto(id, data) {
-  const res = await api.post(p(`v1/reproducao/${id}/partos`), data);
+  const res = await api.post(p(`/reproducao/${id}/partos`), data);
   return res.data;
 }
 
 export async function registrarSecagem(id, data) {
-  const res = await api.post(p(`v1/reproducao/${id}/secagens`), data);
+  const res = await api.post(p(`/reproducao/${id}/secagens`), data);
   return res.data;
 }
 
 export async function listarHistoricoReproducao(id) {
-  const res = await api.get(p(`v1/reproducao/${id}/historico`));
+  const res = await api.get(p(`/reproducao/${id}/historico`));
   return res.data;
 }
 
 /* ================== SAÚDE ================== */
 export async function listarHistoricoSaude(id) {
-  const res = await api.get(p(`v1/saude/${id}/historico`));
+  const res = await api.get(p(`/saude/${id}/historico`));
   return res.data;
 }
 
 export async function registrarOcorrencia(id, data) {
-  const res = await api.post(p(`v1/saude/${id}/ocorrencias`), data);
+  const res = await api.post(p(`/saude/${id}/ocorrencias`), data);
   return res.data;
 }
 
 export async function registrarTratamento(id, data) {
-  const res = await api.post(p(`v1/saude/${id}/tratamentos`), data);
+  const res = await api.post(p(`/saude/${id}/tratamentos`), data);
   return res.data;
 }
 
 /* ================== CONFIGURAÇÃO DO USUÁRIO ================== */
 // 🔧 Antes você chamava '/api/configuracao' e tomava 404.
-// Padronize para '/api/v1/configuracao' (ou crie a rota no backend).
+// Padronize para '/api//configuracao' (ou crie a rota no backend).
 export async function carregarConfiguracao() {
-  const res = await api.get(p('v1/configuracao'));
+  const res = await api.get(p('/configuracao'));
   return res.data;
 }
 
 export async function salvarConfiguracao(data) {
-  const res = await api.post(p('v1/configuracao'), data);
+  const res = await api.post(p('/configuracao'), data);
   return res.data;
 }
 
@@ -133,15 +133,15 @@ export const salvarAnimais = async (animais) =>
 export const atualizarAnimalNoBanco = (animal) => atualizarAnimal(animal.id, animal);
 export const excluirAnimal = removerAnimal;
 export const salvarSaidaAnimal = (saida) =>
-  api.post(p('v1/animais/saidas'), saida).then((r) => r.data);
+  api.post(p('/animais/saidas'), saida).then((r) => r.data);
 
 /* ================== MANUTENÇÃO ================== */
 export async function promoverPreParto() {
-  const res = await api.post(p('v1/maintenance/promote-preparto'));
+  const res = await api.post(p('/maintenance/promote-preparto'));
   return res.data;
 }
 
 export async function ping() {
-  const res = await api.get(p('v1/health'));
+  const res = await api.get(p('/health'));
   return res.data;
 }
