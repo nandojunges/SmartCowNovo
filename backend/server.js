@@ -13,6 +13,8 @@ import { tenantContext } from "./middleware/tenantContext.js";
 import { backupOnWrite } from "./middleware/backupOnWrite.js";
 import animalsResource from "./resources/animals.resource.js";
 import productsResource from "./resources/products.resource.js";
+import animalsMetrics from "./resources/animals.metrics.js";
+import productsMetrics from "./resources/products.metrics.js";
 
 // __dirname em ESM
 const __filename = fileURLToPath(import.meta.url);
@@ -101,6 +103,11 @@ fs.mkdirSync(path.join(__dirname, "dadosExcluidos"), { recursive: true });
 app.use("/api/auth", authRoutes);
 
 // === Novos recursos v1 ===
+// === Métricas v1 (registre ANTES de animals CRUD) ===
+app.use('/api/v1/animals/metrics', animalsMetrics);
+app.use('/api/v1/products/metrics', productsMetrics);
+
+// === Recursos v1 ===
 app.use('/api/v1/animals', animalsResource);
 app.use('/api/v1/products', productsResource);
 

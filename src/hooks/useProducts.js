@@ -1,9 +1,14 @@
 // src/hooks/useProducts.js
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { listProducts, createProduct, updateProduct, deleteProduct } from '../api/sdk/products';
+import { listProducts, createProduct, updateProduct, deleteProduct, getProductsMetrics } from '../api/sdk/products';
 
-export function useProducts(search) {
-  return useQuery({ queryKey: ['products', search], queryFn: () => listProducts(search) });
+export function useProducts(opts) {
+  return useQuery({
+    queryKey: ['products', opts],
+    queryFn: () => listProducts(opts),
+    keepPreviousData: true,
+    staleTime: 10_000,
+  });
 }
 
 export function useCreateProduct() {
@@ -30,5 +35,13 @@ export function useDeleteProduct() {
   return useMutation({
     mutationFn: deleteProduct,
     onSuccess: () => qc.invalidateQueries({ queryKey: ['products'] }),
+  });
+}
+
+export function useProductsMetrics(days = 15) {
+  return useQuery({
+    queryKey: ['products-metrics', days],
+    queryFn: () => getProductsMetrics(days),
+    staleTime: 30_000,
   });
 }
