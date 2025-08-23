@@ -2,7 +2,7 @@
 // Garante TABELAS dos recursos sem tocar no seu schema de AUTH/USERS.
 import db from './dbx.js';
 
-async function ensureTables() {
+export async function ensureTables() {
   const sql = `
     CREATE TABLE IF NOT EXISTS animals (
       id TEXT PRIMARY KEY,
@@ -29,5 +29,3 @@ async function ensureTables() {
   `;
   await db.query(sql);
 }
-
-export { ensureTables };
