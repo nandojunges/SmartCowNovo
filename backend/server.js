@@ -6,10 +6,13 @@ import path from "node:path";
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
+import { ensureTables } from "./bootstrapResources.js";
 
 import authRoutes from "./routes/auth.js";
 import { tenantContext } from "./middleware/tenantContext.js";
 import { backupOnWrite } from "./middleware/backupOnWrite.js";
+import animalsResource from "./resources/animals.resource.js";
+import productsResource from "./resources/products.resource.js";
 
 // __dirname em ESM
 const __filename = fileURLToPath(import.meta.url);
@@ -42,6 +45,11 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 app.use(morgan("dev"));
+
+// Garante tabelas dos novos recursos (não toca usuários)
+ensureTables().catch(err => {
+  console.error('Falha ao criar tabelas de recursos:', err);
+});
 
 // Ativa multi-tenant/backup só quando quiser
 if (BACKUP_ENABLED) {
@@ -91,6 +99,13 @@ fs.mkdirSync(path.join(__dirname, "dadosExcluidos"), { recursive: true });
 // ⚠️ Mantenha por enquanto só as essenciais.
 // Quando for reativar módulos, monte-os aqui, já protegidos com auth/db conforme você recriar.
 app.use("/api/auth", authRoutes);
+
+// === Novos recursos v1 ===
+app.use('/api/v1/animals', animalsResource);
+app.use('/api/v1/products', productsResource);
+
+// Healthcheck opcional
+app.get('/api/v1/health', (_req, res) => res.json({ ok: true }));
 
 // Bloqueio explícito para evitar o SPA “engolir” 404 de /api/*
 app.use("/api/*", (req, res) => {
