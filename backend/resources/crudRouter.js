@@ -89,10 +89,10 @@ export function makeCrudRouter(cfg, db, hooks = {}) {
 
     const cols = Object.keys(data);
     const vals = Object.values(data);
-    const paramsQ = vals.map((_, i) => `$${i + 1}`).join(', ');
+    const params = vals.map((_, i) => `$${i + 1}`).join(', ');
 
     const text = `INSERT INTO "${cfg.table}" (${cols.map(c => `"${c}"`).join(', ')})
-                  VALUES (${paramsQ})
+                  VALUES (${params})
                   RETURNING *`;
     const { rows } = await db.query(text, vals);
     res.status(201).json(rows[0]);
