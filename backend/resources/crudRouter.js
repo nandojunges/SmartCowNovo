@@ -1,42 +1,75 @@
-// backend/resources/crudRouter.js
+// backend/resources/crudRouter.js  (ESM)
 import express from 'express';
 import { v4 as uuid } from 'uuid';
 
+// sanitiza campo de ordenação
+function sanitizeSort(sort, allowed) {
+  if (!sort) return null;
+  const ok = allowed.includes(sort);
+  return ok ? sort : null;
+}
+
 /**
  * cfg:
- *  - table: string
- *  - id: string
- *  - listFields: string[]
- *  - validateCreate: middleware
- *  - validateUpdate: middleware
- *  - defaults: () => object
- * obs: usa db.query estilo PG (text, params)
+ *  - table, id, listFields, searchFields?, sortable?, validateCreate, validateUpdate, defaults
+ * hooks:
+ *  - beforeCreate?, beforeUpdate?
  */
-function makeCrudRouter(cfg, db, hooks = {}) {
+export function makeCrudRouter(cfg, db, hooks = {}) {
   const router = express.Router();
   const { beforeCreate, beforeUpdate } = hooks;
 
-  // LIST com busca simples (?q=)
+  const SEARCHABLE = cfg.searchFields || cfg.listFields.filter(f => f !== cfg.id);
+  const SORTABLE   = cfg.sortable || cfg.listFields;
+
+  // LIST com q, page, limit, sort, order, from, to
   router.get('/', async (req, res) => {
     const q = (req.query.q || '').trim();
-    const fields = cfg.listFields.map(f => `"${f}"`).join(', ');
-    let text = `SELECT ${fields} FROM "${cfg.table}"`;
+
+    const page  = Math.max(parseInt(req.query.page || '1', 10), 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit || '20', 10), 1), 200);
+    const offset = (page - 1) * limit;
+
+    const sortRaw  = (req.query.sort || '').trim();
+    const orderRaw = (req.query.order || 'desc').toLowerCase();
+    const sort  = sanitizeSort(sortRaw, SORTABLE) || 'created_at';
+    const order = orderRaw === 'asc' ? 'ASC' : 'DESC';
+
+    const from = (req.query.from || '').trim();
+    const to   = (req.query.to || '').trim();
+
     const params = [];
+    const where = [];
 
     if (q) {
-      const likeClauses = cfg.listFields
-        .filter(f => f !== cfg.id)
-        .map((f, i) => {
-          params.push(`%${q}%`);
-          return `"${f}" ILIKE $${params.length}`;
-        })
-        .join(' OR ');
-      if (likeClauses) text += ` WHERE ${likeClauses}`;
+      const ors = SEARCHABLE.map((f) => {
+        params.push(`%${q}%`);
+        return `"${f}" ILIKE $${params.length}`;
+      }).join(' OR ');
+      if (ors) where.push(`(${ors})`);
     }
 
-    text += ' ORDER BY "created_at" DESC NULLS LAST';
-    const { rows } = await db.query(text, params);
-    res.json(rows);
+    if (from) { params.push(from); where.push(`"created_at" >= $${params.length}`); }
+    if (to)   { params.push(to);   where.push(`"created_at" <= $${params.length}`); }
+
+    const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+    const fields = cfg.listFields.map(f => `"${f}"`).join(', ');
+
+    const countSql = `SELECT COUNT(*)::int AS total FROM "${cfg.table}" ${whereSql}`;
+    const { rows: countRows } = await db.query(countSql, params);
+    const total = countRows[0]?.total || 0;
+    const pages = Math.max(Math.ceil(total / limit), 1);
+
+    const dataSql = `
+      SELECT ${fields}
+      FROM "${cfg.table}"
+      ${whereSql}
+      ORDER BY "${sort}" ${order} NULLS LAST
+      LIMIT ${limit} OFFSET ${offset}
+    `;
+    const { rows } = await db.query(dataSql, params);
+
+    res.json({ items: rows, page, limit, total, pages, sort, order, q });
   });
 
   // GET by id
@@ -56,10 +89,10 @@ function makeCrudRouter(cfg, db, hooks = {}) {
 
     const cols = Object.keys(data);
     const vals = Object.values(data);
-    const params = vals.map((_, i) => `$${i + 1}`).join(', ');
+    const paramsQ = vals.map((_, i) => `$${i + 1}`).join(', ');
 
     const text = `INSERT INTO "${cfg.table}" (${cols.map(c => `"${c}"`).join(', ')})
-                  VALUES (${params})
+                  VALUES (${paramsQ})
                   RETURNING *`;
     const { rows } = await db.query(text, vals);
     res.status(201).json(rows[0]);
@@ -68,8 +101,6 @@ function makeCrudRouter(cfg, db, hooks = {}) {
   // UPDATE
   router.put('/:id', cfg.validateUpdate, async (req, res) => {
     const id = req.params.id;
-
-    // Confere existência
     const ex = await db.query(`SELECT 1 FROM "${cfg.table}" WHERE "${cfg.id}" = $1`, [id]);
     if (!ex.rows[0]) return res.status(404).json({ error: 'Not found' });
 
@@ -100,5 +131,3 @@ function makeCrudRouter(cfg, db, hooks = {}) {
 
   return router;
 }
-
-export { makeCrudRouter };

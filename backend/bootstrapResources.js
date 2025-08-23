@@ -1,5 +1,4 @@
-// backend/bootstrapResources.js
-// Garante TABELAS dos recursos sem tocar no seu schema de AUTH/USERS.
+// backend/bootstrapResources.js  (ESM)
 import db from './dbx.js';
 
 export async function ensureTables() {
@@ -20,7 +19,7 @@ export async function ensureTables() {
       id TEXT PRIMARY KEY,
       nome TEXT NOT NULL,
       categoria TEXT,
-      unidade TEXT,           -- kg, L, mL, un
+      unidade TEXT,
       preco_unit DOUBLE PRECISION,
       quantidade DOUBLE PRECISION,
       validade TEXT,
