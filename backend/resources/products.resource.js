@@ -1,6 +1,7 @@
-// backend/resources/products.resource.js
+// backend/resources/products.resource.js (ESM)
 import db from '../dbx.js';
-import { z, makeValidator } from '../validate.js';
+import { z } from '../validate.js';
+import { makeValidator } from '../validate.js';
 import { makeCrudRouter } from './crudRouter.js';
 
 const createSchema = z.object({
@@ -11,16 +12,18 @@ const createSchema = z.object({
   quantidade: z.number().optional(),
   validade: z.string().optional(),    // yyyy-mm-dd
 });
-
 const updateSchema = createSchema.partial();
 
 const cfg = {
   table: 'products',
   id: 'id',
   listFields: ['id','nome','categoria','unidade','preco_unit','quantidade','validade','created_at'],
+  searchFields: ['nome','categoria','unidade'],
+  sortable: ['nome','categoria','unidade','preco_unit','quantidade','validade','created_at'],
   validateCreate: makeValidator(createSchema),
   validateUpdate: makeValidator(updateSchema),
   defaults: () => ({ created_at: new Date().toISOString() }),
 };
 
-export default makeCrudRouter(cfg, db);
+const router = makeCrudRouter(cfg, db);
+export default router;

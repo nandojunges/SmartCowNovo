@@ -1,7 +1,7 @@
-// backend/validate.js
+// backend/validate.js  (ESM)
 import { z } from 'zod';
 
-function makeValidator(schema) {
+export function makeValidator(schema) {
   return (req, res, next) => {
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) {
@@ -12,4 +12,4 @@ function makeValidator(schema) {
   };
 }
 
-export { z, makeValidator };
+export { z };
