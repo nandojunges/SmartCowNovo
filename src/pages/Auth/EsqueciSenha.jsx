@@ -22,7 +22,7 @@ export default function EsqueciSenha() {
     }
     setEnviando(true);
     try {
-      await api.post('auth/forgot-password', { email: email.trim().toLowerCase() });
+      await api.post('/api/auth/forgot-password', { email: email.trim().toLowerCase() });
       setEmailEnviado(true);
       toast.success('Código enviado ao e-mail.');
     } catch (err) {
@@ -46,7 +46,7 @@ export default function EsqueciSenha() {
     setEnviandoConfirmacao(true);
     try {
       // ✅ rota e payload corretos: reset-password com { email, code, novaSenha }
-      await api.post('auth/reset-password', {
+      await api.post('/api/auth/reset-password', {
         email: email.trim().toLowerCase(),
         code: String(codigo).trim(),
         novaSenha: novaSenha.trim(),

@@ -74,9 +74,8 @@ export default function Cadastro() {
     try {
       const emailTrim = form.email.trim().toLowerCase();
 
-      // ⚠️ Chame SEM barra inicial para respeitar baseURL '/api/'
-      // ⚠️ Envie apenas os campos que o backend espera: { email, senha }
-      await api.post('auth/register', {
+      // Caminho absoluto e payload simples esperado pelo backend
+      await api.post('/api/auth/register', {
         email: emailTrim,
         senha: form.senha,
       });
