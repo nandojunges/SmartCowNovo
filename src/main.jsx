@@ -5,6 +5,7 @@ import App from "./App.jsx";
 // se você tiver um index.css, mantenha; se não, pode remover a linha abaixo
 import "./index.css";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
 // (opcional) se você tiver o provider de configuração, pode envolver o App.
 // Comente as 2 linhas abaixo se não estiver usando.
@@ -18,6 +19,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       {/* <ConfiguracaoProvider> */}
         <App />
       {/* </ConfiguracaoProvider> */}
+      <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   </React.StrictMode>
 );
