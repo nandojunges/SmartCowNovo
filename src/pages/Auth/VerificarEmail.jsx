@@ -55,7 +55,7 @@ export default function VerificarEmail() {
     try {
       setReenviando(true);
       // ✅ backend: POST /api/auth/resend  { email }
-      await api.post('auth/resend', { email: emailTrim });
+      await api.post('/api/auth/resend', { email: emailTrim });
       setTempo(180);           // reinicia contador (3 min)
       setPodeReenviar(false);  // trava por 30s para evitar spam
       setTimeout(() => setPodeReenviar(true), 30000);
@@ -84,7 +84,7 @@ export default function VerificarEmail() {
     setEnviando(true);
     try {
       // ✅ backend: POST /api/auth/verify  { email, code }
-      await api.post('auth/verify', {
+      await api.post('/api/auth/verify', {
         email: emailTrim,
         code: codeTrim,
       });

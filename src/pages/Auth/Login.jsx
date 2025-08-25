@@ -54,8 +54,8 @@ export default function Login() {
     try {
       setCarregando(true);
 
-      // ⚠️ sem barra inicial para evitar // na URL; normaliza email
-      const { data, status } = await api.post('auth/login', {
+      // Caminho absoluto para evitar duplicação de prefixos
+      const { data, status } = await api.post('/api/auth/login', {
         email: email.trim().toLowerCase(),
         senha: senha.trim(),
       });
