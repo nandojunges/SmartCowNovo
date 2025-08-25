@@ -41,7 +41,7 @@ console.log("SMTP CONFIG =>", {
 
 // Flags
 const BACKUP_ENABLED = process.env.BACKUP_ENABLED === "true";
-const PORT = Number(process.env.PORT || 3001);
+const PORT = process.env.PORT || 3001;
 
 const app = express();
 app.use(cors());
@@ -157,7 +157,7 @@ if (process.env.ENABLE_PREPARTO_JOB === "true") {
 }
 
 const server = app.listen(PORT, () => {
-  console.log(`✅ API ON http://localhost:${PORT}`);
+  console.log(`API v1 on http://localhost:${PORT}`);
 });
 
 server.on("error", (err) => {

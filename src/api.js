@@ -1,9 +1,9 @@
 // src/api.js
 import axios from 'axios';
 
-// 👉 Use baseURL sem barra final para evitar // ao concatenar
+// Use caminho absoluto no SDK (ex.: '/api/v1/...') e deixe a base vazia.
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_BASE || '',
   timeout: 20000,
   headers: {
     'Content-Type': 'application/json',
@@ -32,8 +32,8 @@ api.interceptors.response.use(
   }
 );
 
-// normaliza caminho removendo barras à esquerda
-const p = (s) => s.replace(/^\/+/, '');
+// normaliza caminho (mantém como passado)
+const p = (s) => s;
 
 export default api;
 
