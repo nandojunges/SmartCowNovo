@@ -24,11 +24,40 @@ await pool.query(`
 `);
 
 // POST /api/v1/sires  (name + pdf)
-router.post("/", upload.single("pdf"), async (req, res) => {
+router.post("/", upload.any(), async (req, res) => {
   try {
+    // DEBUG útil para ver o que realmente chegou
+    console.log("[sires POST] headers.content-type:", req.headers["content-type"]);
+    console.log("[sires POST] body keys:", Object.keys(req.body || {}));
+    console.log(
+      "[sires POST] files:",
+      (req.files || []).map((f) => ({
+        field: f.fieldname,
+        name: f.originalname,
+        type: f.mimetype,
+        size: f.size,
+      }))
+    );
+
     const name = String(req.body?.name || "").trim();
-    if (!name) return res.status(400).json({ message: "Campo 'name' é obrigatório." });
-    if (!req.file) return res.status(400).json({ message: "Arquivo 'pdf' é obrigatório." });
+    if (!name) {
+      return res.status(400).json({ message: "Campo 'name' é obrigatório." });
+    }
+
+    // Aceita pdf enviado como 'pdf', 'file', 'arquivo', etc. ou detecta por mimetype
+    const file =
+      (req.files || []).find((f) =>
+        ["pdf", "file", "arquivo", "ficha", "document"].includes(
+          String(f.fieldname || "").toLowerCase()
+        )
+      ) ||
+      (req.files || []).find((f) =>
+        String(f.mimetype).toLowerCase().includes("pdf")
+      );
+
+    if (!file) {
+      return res.status(400).json({ message: "Arquivo PDF não encontrado no upload." });
+    }
 
     const id = uuid();
     const baseDir = path.resolve("storage", "sires");
@@ -36,7 +65,7 @@ router.post("/", upload.single("pdf"), async (req, res) => {
     const filename = `${id}.pdf`;
     const filePath = path.join(baseDir, filename);
 
-    await fsp.writeFile(filePath, req.file.buffer);
+    await fsp.writeFile(filePath, file.buffer);
 
     await pool.query("INSERT INTO sires (id, name, filename) VALUES ($1, $2, $3)", [id, name, filename]);
 
