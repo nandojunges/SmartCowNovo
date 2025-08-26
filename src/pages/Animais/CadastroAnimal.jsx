@@ -52,6 +52,85 @@ function maskMoedaBR(v) {
 }
 
 /* ==========================================================
+   Modal inline: Importar Ficha do Touro (nome + PDF)
+   - Não cria arquivo novo; fica neste JSX
+========================================================== */
+function ModalImportarTouro({ open, defaultName = "", sireId, onClose, onDone }) {
+  const [nome, setNome] = useState(defaultName || "");
+  const [file, setFile] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  if (!open) return null;
+
+  const salvar = async () => {
+    if (!file) { alert("Selecione o PDF da ficha."); return; }
+    if (!sireId && !nome.trim()) { alert("Digite o nome do touro."); return; }
+    try {
+      setBusy(true);
+      let id = sireId;
+      const nomeFinal = nome.trim();
+      if (!id) {
+        const novo = await createSire({ nome: nomeFinal });
+        id = novo.id;
+      }
+      await uploadSirePdf(id, file);
+      onDone?.({ id, nome: nomeFinal });
+    } catch (e) {
+      console.error(e);
+      alert("Falha ao anexar a ficha do touro.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      style={{
+        position: "fixed", inset: 0, background: "rgba(0,0,0,.5)",
+        display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1100
+      }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose?.(); }}
+    >
+      <div style={{ background: "#fff", width: "min(560px, 92vw)", borderRadius: 12, padding: "1.25rem" }}>
+        <h3 style={{ fontWeight: 600, marginBottom: ".75rem" }}>📎 Anexar Ficha do Touro</h3>
+        <div style={{ display: "grid", gap: "1rem" }}>
+          <div>
+            <label style={{ fontWeight: 600 }}>Nome do touro</label>
+            <input
+              type="text"
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              placeholder="Ex.: CHURRASCO FIV DA GV"
+              style={{ width: "100%", padding: ".75rem", borderRadius: 8, border: "1px solid #cbd5e1" }}
+              disabled={!!sireId}
+            />
+            {!!sireId && <small style={{ color: "#475569" }}>Usando o touro já selecionado.</small>}
+          </div>
+          <div>
+            <label style={{ fontWeight: 600 }}>Arquivo (PDF)</label>
+            <input
+              type="file"
+              accept="application/pdf"
+              onChange={(e) => setFile(e.target.files?.[0] || null)}
+            />
+          </div>
+          <div style={{ display: "flex", gap: ".75rem", justifyContent: "flex-end", marginTop: ".5rem" }}>
+            <button onClick={onClose} style={{ padding: ".6rem 1.2rem", borderRadius: 8, border: "1px solid #e5e7eb", background: "#f9fafb" }}>
+              Cancelar
+            </button>
+            <button onClick={salvar} disabled={busy} style={{ padding: ".6rem 1.2rem", borderRadius: 8, border: "none", background: "#2563eb", color: "#fff", fontWeight: 600 }}>
+              {busy ? "Enviando..." : "Salvar"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ==========================================================
    Modal de Ficha Complementar (local, sem storage)
 ========================================================== */
 function FichaComplementarAnimal({ numeroAnimal, onFechar, onSalvar }) {
@@ -67,10 +146,9 @@ function FichaComplementarAnimal({ numeroAnimal, onFechar, onSalvar }) {
   const [dataModal, setDataModal] = useState("");
   const [mensagemSucesso, setMensagemSucesso] = useState("");
   const [modalVerFicha, setModalVerFicha] = useState(false);
+  const [modalImportar, setModalImportar] = useState(false);
 
   const refs = useRef([]);
-  // 👉 input de arquivo oculto para garantir "gesto do usuário"
-  const fileRef = useRef(null);
 
   useEffect(() => {
     refs.current[0]?.focus();
@@ -100,37 +178,6 @@ function FichaComplementarAnimal({ numeroAnimal, onFechar, onSalvar }) {
       setOpcoesSires((prev) => [...prev, { value: novo.id, label: novo.nome }]);
     } catch {
       alert("Não foi possível criar o touro.");
-    }
-  };
-
-  // 👉 chamado após o usuário ESCOLHER o PDF
-  const handleFileChosen = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!sireId && !nomeTouro.trim()) {
-      alert("Digite ou selecione o nome do touro antes de anexar o PDF.");
-      e.target.value = "";
-      return;
-    }
-
-    try {
-      let id = sireId;
-      // se não há id mas há nome, cria o touro agora
-      if (!id && nomeTouro.trim()) {
-        const novo = await createSire({ nome: nomeTouro.trim() });
-        id = novo.id;
-        setSireId(id);
-        setOpcoesSires((prev) => [...prev, { value: novo.id, label: novo.nome }]);
-      }
-      await uploadSirePdf(id, file);
-      alert("📄 Ficha do touro anexada com sucesso!");
-    } catch (err) {
-      console.error(err);
-      alert("Falha ao anexar a ficha do touro.");
-    } finally {
-      // permite selecionar o mesmo arquivo novamente
-      e.target.value = "";
     }
   };
 
@@ -242,21 +289,10 @@ function FichaComplementarAnimal({ numeroAnimal, onFechar, onSalvar }) {
           type="button"
           title="Anexar Ficha"
           style={botaoAnexar}
-          onClick={() => {
-            // abre o seletor imediatamente (gesto do usuário)
-            fileRef.current?.click();
-          }}
+          onClick={() => setModalImportar(true)}
         >
           <span style={{ fontSize: '1.25rem' }}>📎</span> Anexar Ficha
         </button>
-        {/* input oculto para upload */}
-        <input
-          ref={fileRef}
-          type="file"
-          accept="application/pdf"
-          onChange={handleFileChosen}
-          style={{ display: "none" }}
-        />
       </div>
 
       <div style={grid2}>
@@ -353,6 +389,23 @@ function FichaComplementarAnimal({ numeroAnimal, onFechar, onSalvar }) {
           }}
         />
       )}
+      {/* Modal de importação (nome + PDF) */}
+      <ModalImportarTouro
+        open={modalImportar}
+        defaultName={nomeTouro}
+        sireId={sireId}
+        onClose={() => setModalImportar(false)}
+        onDone={({ id, nome }) => {
+          setSireId(id);
+          if (nome) setNomeTouro(nome);
+          setOpcoesSires((prev) => {
+            const exists = prev.some((o) => o.value === id);
+            return exists ? prev : [...prev, { value: id, label: nome || nomeTouro || "Touro" }];
+          });
+          setModalImportar(false);
+          alert("📄 Ficha do touro anexada com sucesso!");
+        }}
+      />
     </div>
   );
 }
