@@ -1,13 +1,15 @@
 // src/pages/Animais/FichasTouros.jsx
 import React, { useEffect, useRef, useState } from "react";
+import api from "../../api";
 
 /* ===============================
    📎 Importar Ficha do Touro (upload PDF)
-   - Sem storage; devolve o objeto via onSalvar
+   - Envia FormData e abre o PDF salvo
 ================================ */
-export function ImportarFichaTouro({ onFechar, onSalvar }) {
-  const [nomeTouro, setNomeTouro] = useState("");
+export function ImportarFichaTouro({ onSucesso, onFechar }) {
+  const [nome, setNome] = useState("");
   const [arquivo, setArquivo] = useState(null);
+  const [salvando, setSalvando] = useState(false);
   const nomeRef = useRef();
   const inputFileRef = useRef();
 
@@ -22,15 +24,32 @@ export function ImportarFichaTouro({ onFechar, onSalvar }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const salvarFicha = () => {
-    if (!nomeTouro || !arquivo) {
-      alert("Preencha o nome do touro e selecione o PDF.");
+  async function salvarFicha() {
+    if (!nome.trim()) {
+      alert("Informe o nome do touro.");
       return;
     }
-    // devolve o File diretamente (sem converter para base64)
-    onSalvar?.({ nome: nomeTouro, file: arquivo });
-    onFechar?.();
-  };
+    if (!arquivo) {
+      alert("Selecione um arquivo PDF.");
+      return;
+    }
+
+    try {
+      setSalvando(true);
+      const fd = new FormData();
+      fd.append("name", nome.trim());
+      fd.append("pdf", arquivo);
+      const { data } = await api.post("/v1/sires", fd);
+      onSucesso?.(data);
+      window.open(`/api/v1/sires/${data.id}/pdf`, "_blank", "noopener");
+      onFechar?.();
+    } catch (err) {
+      console.error("Falha ao anexar a ficha do touro:", err);
+      alert(err?.response?.data?.message || "Não foi possível anexar a ficha.");
+    } finally {
+      setSalvando(false);
+    }
+  }
 
   return (
     <div style={overlayStyle}>
@@ -42,10 +61,10 @@ export function ImportarFichaTouro({ onFechar, onSalvar }) {
           <input
             ref={nomeRef}
             type="text"
-            value={nomeTouro}
-            onChange={(e) => setNomeTouro(e.target.value)}
-            style={inputStyle}
             placeholder="Ex.: WARLOCK DO ABC"
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+            style={inputStyle}
           />
         </div>
 
@@ -61,7 +80,9 @@ export function ImportarFichaTouro({ onFechar, onSalvar }) {
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem', gap: '1rem' }}>
-          <button onClick={salvarFicha} style={botaoPrincipal}>💾 Anexar Ficha</button>
+          <button disabled={salvando} onClick={salvarFicha} style={botaoPrincipal}>
+            {salvando ? "Anexando..." : "💾 Anexar Ficha"}
+          </button>
           <button onClick={onFechar} style={botaoCancelar}>Cancelar</button>
         </div>
       </div>
