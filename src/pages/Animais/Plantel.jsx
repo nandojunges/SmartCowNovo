@@ -1,11 +1,19 @@
 import React, { useState } from "react";
 
-function calcPrevisaoParto(brDate) {
-  if (!brDate || brDate.length !== 10) return null;
-  const [d, m, y] = brDate.split("/");
-  const dt = new Date(`${y}-${m}-${d}`);
-  dt.setDate(dt.getDate() + 280);
-  return dt.toLocaleDateString("pt-BR");
+function idadeTexto(nascimento) {
+  if (!nascimento || nascimento.length !== 10) return "—";
+  const [d, m, a] = nascimento.split("/").map(Number);
+  const dt = new Date(a, m - 1, d);
+  const meses = Math.max(0, Math.floor((Date.now() - dt) / (1000 * 60 * 60 * 24 * 30.44)));
+  return `${Math.floor(meses / 12)}a ${meses % 12}m`;
+}
+
+function del(parto) {
+  if (!parto || parto.length !== 10) return "—";
+  const [d, m, a] = parto.split("/").map(Number);
+  const dt = new Date(a, m - 1, d);
+  const dias = Math.max(0, Math.round((Date.now() - dt) / 86400000));
+  return `${dias}`;
 }
 
 const tableClasses = "w-full border-separate [border-spacing:0_8px] text-sm text-[#333] table-fixed whitespace-nowrap";
@@ -13,12 +21,26 @@ const thBase = "bg-[#e6f0ff] px-4 py-3 text-left font-bold text-[#1e3a8a] border
 const tdBase = "px-5 py-4 border-b border-[#eee] overflow-hidden text-ellipsis";
 const rowBase = "bg-white shadow-sm hover:bg-[#e0f2ff] transition-colors";
 const rowAlt  = "even:bg-[#f3f4f6]";
-const hoverTH = (i, hc) => i===hc ? "bg-[rgba(33,150,243,0.08)]" : "";
-const hoverTD = (i, hc) => i===hc ? "bg-[rgba(33,150,243,0.08)]" : "";
+const hoverTH = (i, hc) => (i === hc ? "bg-[rgba(33,150,243,0.08)]" : "");
+const hoverTD = (i, hc) => (i === hc ? "bg-[rgba(33,150,243,0.08)]" : "");
 
 export default function Plantel({ animais = [] }) {
   const [hoverCol, setHoverCol] = useState(null);
-  const colunas = ["Número","Brinco","Lactações","DEL","Categoria","Idade","Últ. IA","Parto","Raça","Pai","Mãe","Previsão Parto","Ação"];
+  const colunas = [
+    "Número",
+    "Brinco",
+    "Lactações",
+    "DEL",
+    "Categoria",
+    "Idade",
+    "Últ. IA",
+    "Parto",
+    "Raça",
+    "Pai",
+    "Mãe",
+    "Previsão Parto",
+    "Ação",
+  ];
 
   return (
     <div className="w-full px-8 py-6 font-sans">
@@ -26,10 +48,12 @@ export default function Plantel({ animais = [] }) {
         <thead>
           <tr>
             {colunas.map((c, i) => (
-              <th key={c}
-                  onMouseEnter={() => setHoverCol(i)}
-                  onMouseLeave={() => setHoverCol(null)}
-                  className={`${thBase} ${hoverTH(i, hoverCol)}`}>
+              <th
+                key={c}
+                onMouseEnter={() => setHoverCol(i)}
+                onMouseLeave={() => setHoverCol(null)}
+                className={`${thBase} ${hoverTH(i, hoverCol)}`}
+              >
                 {c}
               </th>
             ))}
@@ -37,16 +61,27 @@ export default function Plantel({ animais = [] }) {
         </thead>
         <tbody>
           {(Array.isArray(animais) ? animais : []).map((v, idx) => {
-            const lastCalving = v.ultimoParto || (v.partos?.length ? v.partos[v.partos.length - 1].data : "—");
             const row = [
-              v.numero, v.brinco, v.nLactacoes ?? "—", v.del ?? "—", v.categoria, v.idade,
-              v.ultimaIA || "—", lastCalving, v.raca, v.pai || "—", v.mae || "—",
-              calcPrevisaoParto(v.ultimaIA) || "—", ""
+              v.numero,
+              v.brinco,
+              v.n_lactacoes ?? "—",
+              del(v.parto),
+              v.categoria ?? "—",
+              idadeTexto(v.nascimento),
+              v.ultima_ia ?? "—",
+              v.parto ?? "—",
+              v.raca ?? "—",
+              v.pai ?? "—",
+              v.mae ?? "—",
+              v.previsao_parto ?? "—",
+              "",
             ];
             return (
               <tr key={idx} className={`${rowBase} ${rowAlt}`}>
                 {colunas.map((_, i) => (
-                  <td key={i} className={`${tdBase} ${hoverTD(i, hoverCol)}`}>{row[i]}</td>
+                  <td key={i} className={`${tdBase} ${hoverTD(i, hoverCol)}`}>
+                    {row[i]}
+                  </td>
                 ))}
               </tr>
             );
@@ -56,3 +91,4 @@ export default function Plantel({ animais = [] }) {
     </div>
   );
 }
+
