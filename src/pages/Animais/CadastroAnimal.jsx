@@ -69,6 +69,8 @@ function FichaComplementarAnimal({ numeroAnimal, onFechar, onSalvar }) {
   const [modalVerFicha, setModalVerFicha] = useState(false);
 
   const refs = useRef([]);
+  // 👉 input de arquivo oculto para garantir "gesto do usuário"
+  const fileRef = useRef(null);
 
   useEffect(() => {
     refs.current[0]?.focus();
@@ -98,6 +100,37 @@ function FichaComplementarAnimal({ numeroAnimal, onFechar, onSalvar }) {
       setOpcoesSires((prev) => [...prev, { value: novo.id, label: novo.nome }]);
     } catch {
       alert("Não foi possível criar o touro.");
+    }
+  };
+
+  // 👉 chamado após o usuário ESCOLHER o PDF
+  const handleFileChosen = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!sireId && !nomeTouro.trim()) {
+      alert("Digite ou selecione o nome do touro antes de anexar o PDF.");
+      e.target.value = "";
+      return;
+    }
+
+    try {
+      let id = sireId;
+      // se não há id mas há nome, cria o touro agora
+      if (!id && nomeTouro.trim()) {
+        const novo = await createSire({ nome: nomeTouro.trim() });
+        id = novo.id;
+        setSireId(id);
+        setOpcoesSires((prev) => [...prev, { value: novo.id, label: novo.nome }]);
+      }
+      await uploadSirePdf(id, file);
+      alert("📄 Ficha do touro anexada com sucesso!");
+    } catch (err) {
+      console.error(err);
+      alert("Falha ao anexar a ficha do touro.");
+    } finally {
+      // permite selecionar o mesmo arquivo novamente
+      e.target.value = "";
     }
   };
 
@@ -193,6 +226,8 @@ function FichaComplementarAnimal({ numeroAnimal, onFechar, onSalvar }) {
               opcoesTouros.find((opt) => opt.value === sireId)
               || (nomeTouro ? { value: "__temp__", label: nomeTouro } : null)
             }
+            // 🔹 espelha o que for digitado no estado (mesmo sem ENTER)
+            onInputChange={(val) => setNomeTouro((val || "").trim())}
             onChange={(opt) => {
               if (!opt) { setSireId(null); setNomeTouro(""); return; }
               setSireId(opt.value === "__temp__" ? null : opt.value);
@@ -204,35 +239,24 @@ function FichaComplementarAnimal({ numeroAnimal, onFechar, onSalvar }) {
         </div>
         <button title="Ver ficha do touro" style={botaoIcone} onClick={() => setModalVerFicha(true)}>📄</button>
         <button
+          type="button"
           title="Anexar Ficha"
           style={botaoAnexar}
-          onClick={async () => {
-            try {
-              let id = sireId;
-              // se não há sireId mas existe nome digitado, cria agora
-              if (!id && nomeTouro) {
-                const novo = await createSire({ nome: nomeTouro });
-                id = novo.id;
-                setSireId(id);
-                setOpcoesSires((prev) => [...prev, { value: novo.id, label: novo.nome }]);
-              }
-              if (!id) { alert("Selecione ou digite o nome do touro."); return; }
-              // abrir seletor de arquivo
-              const input = document.createElement('input');
-              input.type = 'file'; input.accept = 'application/pdf';
-              input.onchange = async () => {
-                const file = input.files?.[0];
-                if (file) await uploadSirePdf(id, file);
-                alert('📄 Ficha do touro anexada com sucesso!');
-              };
-              input.click();
-            } catch {
-              alert('Falha ao anexar ficha do touro.');
-            }
+          onClick={() => {
+            // abre o seletor imediatamente (gesto do usuário)
+            fileRef.current?.click();
           }}
         >
           <span style={{ fontSize: '1.25rem' }}>📎</span> Anexar Ficha
         </button>
+        {/* input oculto para upload */}
+        <input
+          ref={fileRef}
+          type="file"
+          accept="application/pdf"
+          onChange={handleFileChosen}
+          style={{ display: "none" }}
+        />
       </div>
 
       <div style={grid2}>
