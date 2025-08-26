@@ -1,6 +1,7 @@
 // src/pages/Animais/CadastroAnimal.jsx
 import React, { useEffect, useRef, useState } from "react";
 import Select from "react-select";
+import CreatableSelect from "react-select/creatable";
 import { AbrirFichaTouro } from "./FichasTouros";
 import { criarAnimal, getSires, createSire, uploadSirePdf } from "../../api"; // 🔗 chama POST /api/v1/animals
 
@@ -85,6 +86,20 @@ function FichaComplementarAnimal({ numeroAnimal, onFechar, onSalvar }) {
       } catch {}
     })();
   }, []);
+
+  // cria um touro no BD quando o usuário digitar um nome novo no select
+  const handleCreateSire = async (inputValue) => {
+    const nome = (inputValue || "").trim();
+    if (!nome) return;
+    try {
+      const novo = await createSire({ nome });
+      setSireId(novo.id);
+      setNomeTouro(novo.nome);
+      setOpcoesSires((prev) => [...prev, { value: novo.id, label: novo.nome }]);
+    } catch {
+      alert("Não foi possível criar o touro.");
+    }
+  };
 
   const handleKey = (e, index) => {
     if (e.key === "Enter" || e.key === "ArrowDown") {
@@ -171,11 +186,20 @@ function FichaComplementarAnimal({ numeroAnimal, onFechar, onSalvar }) {
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
         <div style={{ flex: 1 }}>
-          <Select
+          <CreatableSelect
+            isClearable
             options={opcoesTouros}
-            value={opcoesTouros.find((opt) => opt.value === sireId) || null}
-            onChange={(e) => { setSireId(e.value); setNomeTouro(e.label); }}
-            placeholder="Selecione um touro"
+            value={
+              opcoesTouros.find((opt) => opt.value === sireId)
+              || (nomeTouro ? { value: "__temp__", label: nomeTouro } : null)
+            }
+            onChange={(opt) => {
+              if (!opt) { setSireId(null); setNomeTouro(""); return; }
+              setSireId(opt.value === "__temp__" ? null : opt.value);
+              setNomeTouro(opt.label || "");
+            }}
+            onCreateOption={handleCreateSire}
+            placeholder="Selecione ou digite um touro e pressione ENTER"
           />
         </div>
         <button title="Ver ficha do touro" style={botaoIcone} onClick={() => setModalVerFicha(true)}>📄</button>
@@ -184,16 +208,15 @@ function FichaComplementarAnimal({ numeroAnimal, onFechar, onSalvar }) {
           style={botaoAnexar}
           onClick={async () => {
             try {
-              // se não houver sire selecionado, cria com o nome digitado (ou alerta)
               let id = sireId;
-              if (!id) {
-                if (!nomeTouro) { alert("Selecione ou digite o nome do touro."); return; }
+              // se não há sireId mas existe nome digitado, cria agora
+              if (!id && nomeTouro) {
                 const novo = await createSire({ nome: nomeTouro });
-                id = novo.id; setSireId(id);
-                // recarrega lista de sires para aparecer no select
-                const data = await getSires({ page:1, limit:100 });
-                setOpcoesSires((data.items||[]).map(s=>({value:s.id,label:s.nome})));
+                id = novo.id;
+                setSireId(id);
+                setOpcoesSires((prev) => [...prev, { value: novo.id, label: novo.nome }]);
               }
+              if (!id) { alert("Selecione ou digite o nome do touro."); return; }
               // abrir seletor de arquivo
               const input = document.createElement('input');
               input.type = 'file'; input.accept = 'application/pdf';
@@ -203,7 +226,9 @@ function FichaComplementarAnimal({ numeroAnimal, onFechar, onSalvar }) {
                 alert('📄 Ficha do touro anexada com sucesso!');
               };
               input.click();
-            } catch (e) { alert('Falha ao anexar ficha do touro.'); }
+            } catch {
+              alert('Falha ao anexar ficha do touro.');
+            }
           }}
         >
           <span style={{ fontSize: '1.25rem' }}>📎</span> Anexar Ficha
