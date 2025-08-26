@@ -369,11 +369,18 @@ export default function CadastroAnimal({ animais = [], onAtualizar }) {
       const payload = {
         numero,
         brinco,
-        nascimento, // TEXT (dd/mm/aaaa)
+        nascimento,                       // TEXT dd/mm/aaaa
         raca,
-        estado: categoria || "vazia",
-        ...(complementares?.ultimaIA ? { ultima_ia: complementares.ultimaIA } : {}),
-        ...(complementares?.ultimoParto ? { parto: complementares.ultimoParto } : {}),
+        estado: categoria || "vazia",     // mantém compatibilidade com tabela
+        sexo,                             // 'femea' | 'macho'
+        categoria,                        // salva o rótulo mostrado
+        pai: complementares?.pai || "",
+        mae: complementares?.mae || "",
+        n_lactacoes: Number(complementares?.nLactacoes || 0),
+        ultima_ia: complementares?.ultimaIA || "",
+        parto: complementares?.ultimoParto || "",
+        previsao_parto: complementares?.dataPrevistaParto || "",
+        historico: complementares?.historico || null, // opcional
       };
       const inserido = await criarAnimal(payload); // POST /api/v1/animals
 
