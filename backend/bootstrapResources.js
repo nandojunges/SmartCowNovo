@@ -1,5 +1,12 @@
 // backend/bootstrapResources.js  (ESM)
+import express from 'express';
+import fs from 'fs';
+import path from 'path';
+import multer from 'multer';
+import { v4 as uuid } from 'uuid';
 import db from './dbx.js';
+import { z, makeValidator } from './validate.js';
+import { makeCrudRouter, extractUserId } from './resources/crudRouter.js';
 
 export async function ensureTables() {
   const sql = `
@@ -80,3 +87,91 @@ export async function ensureTables() {
   `;
   await db.query(sql);
 }
+
+export default async function bootstrapResources(app) {
+  await ensureTables();
+
+  const createSchema = z.object({
+    nome: z.string().min(1),
+    codigo: z.string().optional(),
+    raca: z.string().optional(),
+    notas: z.string().optional(),
+  });
+
+  app.use(
+    '/api/v1/sires',
+    makeCrudRouter(
+      {
+        table: 'sires',
+        id: 'id',
+        listFields: ['id','owner_id','nome','codigo','raca','notas','created_at'],
+        searchFields: ['nome','codigo','raca'],
+        sortable: ['nome','created_at'],
+        validateCreate: makeValidator(createSchema),
+        validateUpdate: makeValidator(createSchema.partial()),
+        defaults: () => ({ created_at: new Date().toISOString() }),
+        scope: { column: 'owner_id', required: true },
+      },
+      db
+    )
+  );
+
+  const upload = multer({
+    storage: multer.diskStorage({
+      destination(req, file, cb) {
+        const uid = extractUserId(req) || 'anon';
+        const { id } = req.params;
+        const dir = path.join(process.cwd(), 'storage', 'uploads', String(uid), 'sires', String(id));
+        fs.mkdirSync(dir, { recursive: true });
+        cb(null, dir);
+      },
+      filename(_req, file, cb) {
+        cb(null, Date.now() + '-' + file.originalname.replace(/\s+/g, '_'));
+      },
+    }),
+    fileFilter(_req, file, cb) {
+      if (file.mimetype !== 'application/pdf') return cb(new Error('Apenas PDF'));
+      cb(null, true);
+    },
+    limits: { fileSize: 15 * 1024 * 1024 },
+  });
+
+  app.post('/api/v1/sires/:id/file', upload.single('file'), async (req, res) => {
+    const uid = extractUserId(req);
+    if (!uid) return res.status(401).json({ error: 'Unauthorized' });
+    const ok = await db.query(`SELECT 1 FROM sires WHERE id=$1 AND owner_id=$2`, [req.params.id, uid]);
+    if (!ok.rows[0]) return res.status(404).json({ error: 'Sire not found' });
+    const f = req.file;
+    if (!f) return res.status(400).json({ error: 'Arquivo ausente' });
+    const rec = {
+      id: uuid(),
+      owner_id: uid,
+      sire_id: req.params.id,
+      filename: f.originalname,
+      mime: f.mimetype,
+      size_bytes: f.size,
+      path: f.path,
+    };
+    const { rows } = await db.query(
+      `INSERT INTO sire_files(id, owner_id, sire_id, filename, mime, size_bytes, path)
+       VALUES($1,$2,$3,$4,$5,$6,$7)
+       RETURNING id, owner_id, sire_id, filename, mime, size_bytes, created_at`,
+      [rec.id, rec.owner_id, rec.sire_id, rec.filename, rec.mime, rec.size_bytes, rec.path]
+    );
+    res.status(201).json(rows[0]);
+  });
+
+  app.get('/api/v1/sires/:id/files', async (req, res) => {
+    const uid = extractUserId(req);
+    if (!uid) return res.status(401).json({ error: 'Unauthorized' });
+    const { rows } = await db.query(
+      `SELECT id, filename, mime, size_bytes, created_at
+         FROM sire_files
+        WHERE owner_id=$1 AND sire_id=$2
+        ORDER BY created_at DESC`,
+      [uid, req.params.id]
+    );
+    res.json({ items: rows });
+  });
+}
+
