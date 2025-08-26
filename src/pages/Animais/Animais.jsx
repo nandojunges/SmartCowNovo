@@ -15,8 +15,6 @@ import AbasTodos from './AbasTodos';
 import SaidaAnimal from './SaidaAnimal';
 import Inativas from './Inativas';
 import Plantel from './Plantel';
-import Secagem from './Secagem';
-import Parto from './Parto';
 import CadastroAnimal from './CadastroAnimal'; // ✅ novo import
 import { getAnimais } from '../../api'; // 🔗 GET /api/v1/animals
 
@@ -152,9 +150,10 @@ export default function Animais() {
             animais={animais}
             onRefresh={carregar}
             componentes={{
-              plantel: (p) => <Plantel {...p} />,
-              secagem: (p) => <Secagem {...p} />,
-              parto:   (p) => <Parto   {...p} />,
+              plantel:  (p) => <Plantel {...p} />,
+              preparto: (p) => <Plantel {...p} />,
+              secagem:  (p) => <Plantel {...p} />,
+              parto:    (p) => <Plantel {...p} />,
             }}
           />
         );
