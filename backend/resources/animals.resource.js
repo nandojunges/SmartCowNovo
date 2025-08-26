@@ -31,6 +31,7 @@ const createSchema = z.object({
   sexo: z.string().optional(),                  // 'femea' | 'macho'
   categoria: z.string().optional(),             // calculada no front, mas salvamos
   pai: z.string().optional(),
+  pai_id: z.string().optional(),  // referência ao sire
   mae: z.string().optional(),
   n_lactacoes: z.coerce.number().int().nonnegative().optional(),
   ultima_ia: z.string().optional(),             // dd/mm/aaaa
@@ -45,7 +46,7 @@ const cfg = {
   id: 'id',
   listFields: [
     'id','owner_id','numero','brinco','raca','estado','sexo','categoria',
-    'n_lactacoes','pai','mae','nascimento','ultima_ia','parto','previsao_parto','created_at'
+    'n_lactacoes','pai','pai_id','mae','nascimento','ultima_ia','parto','previsao_parto','created_at'
   ],
   searchFields: ['numero','brinco','raca','estado','pai','mae'],
   sortable: [

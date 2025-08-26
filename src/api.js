@@ -67,6 +67,35 @@ export async function removerAnimal(id) {
   return res.data;
 }
 
+// ===== Sires (touros)
+export async function getSires({ q, page, limit } = {}) {
+  const params = {};
+  if (q) params.q = q;
+  if (page) params.page = page;
+  if (limit) params.limit = limit;
+  const res = await api.get(path('/v1/sires'), { params });
+  return res.data;
+}
+
+export async function createSire(data) {
+  const res = await api.post(path('/v1/sires'), data);
+  return res.data;
+}
+
+export async function uploadSirePdf(id, file) {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await api.post(path(`/v1/sires/${id}/file`), form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return res.data;
+}
+
+export async function listSireFiles(id) {
+  const res = await api.get(path(`/v1/sires/${id}/files`));
+  return res.data;
+}
+
 /* ================== REPRODUÇÃO ================== */
 export async function inserirInseminacao(id, data) {
   const res = await api.post(path(`/reproducao/${id}/inseminacoes`), data);
