@@ -96,6 +96,24 @@ export async function listSireFiles(id) {
   return res.data;
 }
 
+// baixa o PDF da ficha do touro
+export async function getSirePdf(sireId) {
+  // ajuste a rota caso sua API use outro caminho
+  const res = await api.get(path(`/v1/sires/${sireId}/pdf`), {
+    responseType: 'blob',
+  });
+  // tenta extrair o filename do header (opcional)
+  let filename = 'ficha.pdf';
+  const cd = res.headers?.['content-disposition'] || res.headers?.['Content-Disposition'];
+  if (cd) {
+    const m = /filename\*=UTF-8''([^;]+)|filename="?([^"]+)"?/i.exec(cd);
+    filename = decodeURIComponent(m?.[1] || m?.[2] || filename);
+  }
+  const blob = new Blob([res.data], { type: 'application/pdf' });
+  const url = URL.createObjectURL(blob);
+  return { url, filename };
+}
+
 /* ================== REPRODUÇÃO ================== */
 export async function inserirInseminacao(id, data) {
   const res = await api.post(path(`/reproducao/${id}/inseminacoes`), data);

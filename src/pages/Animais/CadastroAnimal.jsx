@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import Select from "react-select";
 import CreatableSelect from "react-select/creatable";
 import { AbrirFichaTouro } from "./FichasTouros";
-import { criarAnimal, getSires, createSire, uploadSirePdf } from "../../api"; // 🔗 chama POST /api/v1/animals
+import { criarAnimal, getSires, createSire, uploadSirePdf, getSirePdf } from "../../api"; // 🔗 chama POST /api/v1/animals
 
 /* ===========================================
    Helpers inline (sem dependências externas)
@@ -175,6 +175,8 @@ function FichaComplementarAnimal({ numeroAnimal, onFechar, onSalvar }) {
   const [mensagemSucesso, setMensagemSucesso] = useState("");
   const [modalVerFicha, setModalVerFicha] = useState(false);
   const [modalImportar, setModalImportar] = useState(false);
+  const [fichaParaVer, setFichaParaVer] = useState(null);
+  const [carregandoFicha, setCarregandoFicha] = useState(false);
 
   const refs = useRef([]);
 
@@ -283,8 +285,37 @@ function FichaComplementarAnimal({ numeroAnimal, onFechar, onSalvar }) {
     setModalTipo(null);
   };
 
+  const abrirFichaDoTouro = async () => {
+    // 1) Se tiver sireId (backend), tenta baixar o PDF
+    if (sireId) {
+      try {
+        setCarregandoFicha(true);
+        const { url } = await getSirePdf(sireId);
+        setFichaParaVer({ nome: nomeTouro || "", arquivoBase64: url });
+        setModalVerFicha(true);
+        return;
+      } catch (e) {
+        console.error("Falha ao obter PDF do touro:", e);
+        // se falhar, cai para o fallback em memória abaixo
+      } finally {
+        setCarregandoFicha(false);
+      }
+    }
+
+    // 2) Fallback: procurar no array em memória (se você ainda o usa)
+    if (typeof touros !== 'undefined' && Array.isArray(touros)) {
+      const ficha = touros.find((t) => t.nome === nomeTouro) || null;
+      setFichaParaVer(ficha);
+      setModalVerFicha(true);
+      return;
+    }
+
+    // 3) Se nada encontrado:
+    setFichaParaVer(null);
+    setModalVerFicha(true);
+  };
+
   const opcoesTouros = opcoesSires;
-  const fichaSelecionada = null; // (poderá listar arquivos com listSireFiles(sireId))
 
   return (
     <div style={{ padding: '2rem' }}>
@@ -312,7 +343,7 @@ function FichaComplementarAnimal({ numeroAnimal, onFechar, onSalvar }) {
             placeholder="Selecione ou digite um touro e pressione ENTER"
           />
         </div>
-        <button title="Ver ficha do touro" style={botaoIcone} onClick={() => setModalVerFicha(true)}>📄</button>
+        <button title="Ver ficha do touro" style={botaoIcone} onClick={abrirFichaDoTouro}>📄</button>
         <button
           type="button"
           title="Anexar Ficha"
@@ -410,7 +441,7 @@ function FichaComplementarAnimal({ numeroAnimal, onFechar, onSalvar }) {
 
       {modalVerFicha && (
         <AbrirFichaTouro
-          ficha={fichaSelecionada}
+          ficha={fichaParaVer}
           onFechar={() => setModalVerFicha(false)}
           onSalvar={(atualizado) => {
             setNomeTouro(atualizado?.nome || nomeTouro);
