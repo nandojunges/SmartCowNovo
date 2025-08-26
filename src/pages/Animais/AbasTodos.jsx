@@ -1,10 +1,12 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { getAnimais } from '../../api';
 
 function Tabs({ selected, setSelected }) {
   const tabs = useMemo(() => ([
-    { id: 'plantel', label: 'Plantel', img: '/icones/plantel.png' },
-    { id: 'secagem', label: 'Secagem', img: '/icones/secagem.png' },
-    { id: 'parto',   label: 'Parto',   img: '/icones/parto.png'   },
+    { id: 'plantel',  label: 'Plantel',   img: '/icones/plantel.png'   },
+    { id: 'preparto', label: 'Pré-parto', img: '/icones/preparto.png' },
+    { id: 'secagem',  label: 'Secagem',   img: '/icones/secagem.png'  },
+    { id: 'parto',    label: 'Parto',     img: '/icones/parto.png'    },
   ]), []);
 
   const onKey = useCallback((e) => {
@@ -94,16 +96,39 @@ function Tabs({ selected, setSelected }) {
   );
 }
 
-export default function AbasTodos({ animais, onRefresh, components, componentes }) {
+export default function AbasTodos({ animais = [], onRefresh, components, componentes }) {
   const maps = components || componentes || {};
   const [tab, setTab] = useState('plantel');
+  const [listas, setListas] = useState({ preparto: [], secagem: [], parto: [] });
+
+  useEffect(() => {
+    const carregar = async () => {
+      try {
+        if (tab === 'preparto') {
+          const { items } = await getAnimais({ view: 'preparto', days: 30, page: 1, limit: 50 });
+          setListas((l) => ({ ...l, preparto: items || [] }));
+        } else if (tab === 'secagem') {
+          const { items } = await getAnimais({ view: 'secagem', days: 60 });
+          setListas((l) => ({ ...l, secagem: items || [] }));
+        } else if (tab === 'parto') {
+          const { items } = await getAnimais({ view: 'parto', days: 1 });
+          setListas((l) => ({ ...l, parto: items || [] }));
+        }
+      } catch (err) {
+        console.error('Erro ao carregar animais:', err);
+      }
+    };
+    if (tab !== 'plantel') carregar();
+  }, [tab]);
+
   const Comp = maps[tab];
+  const data = tab === 'plantel' ? animais : listas[tab] || [];
 
   return (
     <div className="w-full">
       <Tabs selected={tab} setSelected={setTab} />
       <div className="mt-2 px-4" id={`pane-${tab}`} role="tabpanel" aria-labelledby={tab}>
-        {Comp ? <Comp animais={animais} onRefresh={onRefresh} /> : null}
+        {Comp ? <Comp animais={data} onRefresh={onRefresh} /> : null}
       </div>
     </div>
   );

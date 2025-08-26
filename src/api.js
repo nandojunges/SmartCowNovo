@@ -38,13 +38,11 @@ const path = (s = '') => `${API}${s.startsWith('/') ? s : `/${s}`}`;
 export default api;
 
 /* ================== ANIMAIS ================== */
-export async function getAnimais({ estado, q, page, limit } = {}) {
+export async function getAnimais(opts = {}) {
   const params = {};
-  if (estado) params.estado = estado;
-  if (q) params.q = q;
-  if (page) params.page = page;
-  if (limit) params.limit = limit;
-  // ROTA CORRETA DO BACKEND
+  Object.entries(opts).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && v !== '') params[k] = v;
+  });
   const res = await api.get(path('/v1/animals'), { params });
   return res.data;
 }
