@@ -2,6 +2,24 @@
 import express from 'express';
 import { v4 as uuid } from 'uuid';
 
+function extractUserId(req) {
+  // tenta vários formatos comuns de middleware
+  const u = req.user || req.auth || {};
+  let id = u.id || u.userId || req.userId || u.sub || null;
+  if (!id) {
+    // fallback: decodifica JWT sem verificar assinatura (já esperamos que o auth do app valide antes)
+    const auth = req.headers?.authorization || '';
+    const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
+    try {
+      if (token) {
+        const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString('utf8'));
+        id = payload.userId || payload.id || payload.sub || payload.uid || null;
+      }
+    } catch {}
+  }
+  return id;
+}
+
 // sanitiza campo de ordenação
 function sanitizeSort(sort, allowed) {
   if (!sort) return null;
@@ -21,6 +39,7 @@ export function makeCrudRouter(cfg, db, hooks = {}) {
 
   const SEARCHABLE = cfg.searchFields || cfg.listFields.filter(f => f !== cfg.id);
   const SORTABLE   = cfg.sortable || cfg.listFields;
+  const SCOPE      = cfg.scope; // { column: 'owner_id', required?: true }
 
   // LIST com q, page, limit, sort, order, from, to
   router.get('/', async (req, res) => {
@@ -52,6 +71,16 @@ export function makeCrudRouter(cfg, db, hooks = {}) {
     if (from) { params.push(from); where.push(`"created_at" >= $${params.length}`); }
     if (to)   { params.push(to);   where.push(`"created_at" <= $${params.length}`); }
 
+    // escopo por usuário
+    if (SCOPE?.column) {
+      const uid = extractUserId(req);
+      if (SCOPE.required && !uid) return res.status(401).json({ error: 'Unauthorized' });
+      if (uid) {
+        params.push(uid);
+        where.push(`"${SCOPE.column}" = $${params.length}`);
+      }
+    }
+
     const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
     const fields = cfg.listFields.map(f => `"${f}"`).join(', ');
 
@@ -74,10 +103,15 @@ export function makeCrudRouter(cfg, db, hooks = {}) {
 
   // GET by id
   router.get('/:id', async (req, res) => {
-    const { rows } = await db.query(
-      `SELECT * FROM "${cfg.table}" WHERE "${cfg.id}" = $1 LIMIT 1`,
-      [req.params.id]
-    );
+    const params = [req.params.id];
+    let sql = `SELECT * FROM "${cfg.table}" WHERE "${cfg.id}" = $1`;
+    if (SCOPE?.column) {
+      const uid = extractUserId(req);
+      if (SCOPE.required && !uid) return res.status(401).json({ error: 'Unauthorized' });
+      if (uid) { params.push(uid); sql += ` AND "${SCOPE.column}" = $2`; }
+    }
+    sql += ' LIMIT 1';
+    const { rows } = await db.query(sql, params);
     if (!rows[0]) return res.status(404).json({ error: 'Not found' });
     res.json(rows[0]);
   });
@@ -85,6 +119,11 @@ export function makeCrudRouter(cfg, db, hooks = {}) {
   // CREATE
   router.post('/', cfg.validateCreate, async (req, res) => {
     const data = { [cfg.id]: uuid(), ...cfg.defaults?.(), ...req.validated };
+    if (SCOPE?.column) {
+      const uid = extractUserId(req);
+      if (SCOPE.required && !uid) return res.status(401).json({ error: 'Unauthorized' });
+      if (uid) data[SCOPE.column] = uid;
+    }
     if (beforeCreate) await beforeCreate(data, req);
 
     const cols = Object.keys(data);
@@ -101,7 +140,14 @@ export function makeCrudRouter(cfg, db, hooks = {}) {
   // UPDATE
   router.put('/:id', cfg.validateUpdate, async (req, res) => {
     const id = req.params.id;
-    const ex = await db.query(`SELECT 1 FROM "${cfg.table}" WHERE "${cfg.id}" = $1`, [id]);
+    let exSql = `SELECT 1 FROM "${cfg.table}" WHERE "${cfg.id}" = $1`;
+    const exParams = [id];
+    if (SCOPE?.column) {
+      const uid = extractUserId(req);
+      if (SCOPE.required && !uid) return res.status(401).json({ error: 'Unauthorized' });
+      if (uid) { exSql += ` AND "${SCOPE.column}" = $2`; exParams.push(uid); }
+    }
+    const ex = await db.query(exSql, exParams);
     if (!ex.rows[0]) return res.status(404).json({ error: 'Not found' });
 
     const patch = { ...req.validated };
@@ -118,14 +164,27 @@ export function makeCrudRouter(cfg, db, hooks = {}) {
 
     const sets = entries.map(([k], i) => `"${k}" = $${i + 1}`).join(', ');
     const vals = entries.map(([, v]) => v);
-    const text = `UPDATE "${cfg.table}" SET ${sets} WHERE "${cfg.id}" = $${entries.length + 1} RETURNING *`;
-    const { rows } = await db.query(text, [...vals, id]);
+    let text = `UPDATE "${cfg.table}" SET ${sets} WHERE "${cfg.id}" = $${entries.length + 1}`;
+    const params = [...vals, id];
+    if (SCOPE?.column) {
+      const uid = extractUserId(req);
+      if (uid) { text += ` AND "${SCOPE.column}" = $${entries.length + 2}`; params.push(uid); }
+    }
+    text += ' RETURNING *';
+    const { rows } = await db.query(text, params);
     res.json(rows[0]);
   });
 
   // DELETE
   router.delete('/:id', async (req, res) => {
-    await db.query(`DELETE FROM "${cfg.table}" WHERE "${cfg.id}" = $1`, [req.params.id]);
+    const params = [req.params.id];
+    let text = `DELETE FROM "${cfg.table}" WHERE "${cfg.id}" = $1`;
+    if (SCOPE?.column) {
+      const uid = extractUserId(req);
+      if (SCOPE.required && !uid) return res.status(401).json({ error: 'Unauthorized' });
+      if (uid) { text += ` AND "${SCOPE.column}" = $2`; params.push(uid); }
+    }
+    await db.query(text, params);
     res.status(204).send();
   });
 

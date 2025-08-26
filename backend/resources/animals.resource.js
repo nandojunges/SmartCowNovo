@@ -24,6 +24,7 @@ const cfg = {
   validateCreate: makeValidator(createSchema),
   validateUpdate: makeValidator(updateSchema),
   defaults: () => ({ created_at: new Date().toISOString() }),
+  scope: { column: 'owner_id', required: true }, // 🔒 cada usuário vê/salva só o que é dele
 };
 
 const router = makeCrudRouter(cfg, db);
