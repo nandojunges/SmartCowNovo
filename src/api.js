@@ -1,18 +1,22 @@
 // src/api.js
 import axios from 'axios';
 
-// 👉 baseURL vazia para não duplicar /api
+// 👉 baseURL fixo '/api' e credenciais automáticas
 const api = axios.create({
-  baseURL: '',
+  baseURL: '/api',
   timeout: 20000,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
   },
 });
 
-// injeta token (se houver)
+// injeta token (se houver) e permite FormData sem forçar JSON
 api.interceptors.request.use((config) => {
+  if (config.data instanceof FormData && config.headers) {
+    delete config.headers['Content-Type'];
+  }
   const token = localStorage.getItem('token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
@@ -31,9 +35,8 @@ api.interceptors.response.use(
   }
 );
 
-// ✅ helper que sempre prefixa com /api
-const API = '/api';
-const path = (s = '') => `${API}${s.startsWith('/') ? s : `/${s}`}`;
+// ✅ helper que garante a barra inicial
+const path = (s = '') => (s.startsWith('/') ? s : `/${s}`);
 
 export default api;
 
@@ -80,16 +83,14 @@ export async function getSires({ q, page, limit } = {}) {
 // --- FICHA DO TOURO ---
 // cria o touro (apenas dados básicos)
 export async function createSire(nome) {
-  const res = await api.post("/api/v1/sires", { name: nome });
+  const res = await api.post('/v1/sires', { name: nome });
   return res.data; // deve retornar { id, name, ... }
 }
 
 export async function uploadSirePdf(sireId, file) {
   const form = new FormData();
-  form.append("file", file); // <<< mantenha "file"
-  const res = await api.post(`/api/v1/sires/${sireId}/pdf`, form, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  form.append('file', file); // <<< mantenha "file"
+  const res = await api.post(`/v1/sires/${sireId}/pdf`, form);
   return res.data;
 }
 
@@ -100,7 +101,7 @@ export async function listSireFiles(id) {
 
 // Para abrir:
 export async function getSirePdf(sireId) {
-  const res = await api.get(`/api/v1/sires/${sireId}/pdf`, { responseType: "blob" });
+  const res = await api.get(`/v1/sires/${sireId}/pdf`, { responseType: 'blob' });
   return res.data; // Blob
 }
 

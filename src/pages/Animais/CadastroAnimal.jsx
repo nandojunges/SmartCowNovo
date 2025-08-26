@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import Select from "react-select";
 import CreatableSelect from "react-select/creatable";
 import { AbrirFichaTouro, ImportarFichaTouro } from "./FichasTouros";
-import { criarAnimal, createSire, uploadSirePdf, getSirePdf } from "../../api"; // 🔗 chama POST /api/v1/animals
+import { criarAnimal, getSirePdf } from "../../api"; // 🔗 chama POST /api/v1/animals
 
 /* ===========================================
    Helpers inline (sem dependências externas)
@@ -333,20 +333,12 @@ function FichaComplementarAnimal({ numeroAnimal, onFechar, onSalvar, onSalvarTou
       )}
       {modalImportar && (
         <ImportarFichaTouro
-          onFechar={() => setModalImportar(false)}
-          onSalvar={async ({ nome, file }) => {
-            try {
-              const novo = await createSire(nome); // => { id, name, ... }
-              await uploadSirePdf(novo.id, file);
-              onSalvarTouro?.({ id: novo.id, nome, hasPdf: true });
-              setSireId(novo.id);
-              setNomeTouro(nome);
-              setModalImportar(false);
-            } catch (e) {
-              console.error("Falha ao anexar a ficha do touro:", e);
-              alert("Falha ao anexar a ficha do touro.");
-            }
+          onSucesso={(sire) => {
+            onSalvarTouro?.({ id: sire.id, nome: sire.name, hasPdf: true });
+            setSireId(sire.id);
+            setNomeTouro(sire.name);
           }}
+          onFechar={() => setModalImportar(false)}
         />
       )}
     </div>
