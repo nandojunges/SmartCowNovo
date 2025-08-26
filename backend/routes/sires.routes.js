@@ -1,63 +1,70 @@
 import express from "express";
-import multer from "multer";
 import path from "node:path";
 import fs from "node:fs";
+import fsp from "node:fs/promises";
+import { v4 as uuid } from "uuid";
+import multer from "multer";
+import { pool } from "../db.js";
 
+const upload = multer({ storage: multer.memoryStorage() });
 const router = express.Router();
 
-// Pasta dos PDFs
-const SIRES_DIR = path.join(process.cwd(), "uploads", "sires");
-fs.mkdirSync(SIRES_DIR, { recursive: true });
+async function ensureDir(dir) {
+  await fsp.mkdir(dir, { recursive: true });
+}
 
-// Usaremos memoryStorage para forçar o nome final <id>.pdf
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 15 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype !== "application/pdf") {
-      return cb(new Error("Apenas PDF é permitido."));
-    }
-    cb(null, true);
-  },
-});
+// cria tabela se não existir
+await pool.query(`
+  CREATE TABLE IF NOT EXISTS sires (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    filename TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )
+`);
 
-// POST /api/v1/sires/:id/pdf   (campo pode ser file, pdf ou arquivo)
-router.post("/:id/pdf", upload.any(), async (req, res) => {
+// POST /api/v1/sires  (name + pdf)
+router.post("/", upload.single("pdf"), async (req, res) => {
   try {
-    const id = req.params.id;
-    const f =
-      req.files?.find((x) => ["file", "pdf", "arquivo"].includes(x.fieldname)) ||
-      req.files?.[0];
+    const name = String(req.body?.name || "").trim();
+    if (!name) return res.status(400).json({ message: "Campo 'name' é obrigatório." });
+    if (!req.file) return res.status(400).json({ message: "Arquivo 'pdf' é obrigatório." });
 
-    if (!f) {
-      return res
-        .status(400)
-        .json({ error: "Arquivo não recebido (use o campo 'file')." });
-    }
+    const id = uuid();
+    const baseDir = path.resolve("storage", "sires");
+    await ensureDir(baseDir);
+    const filename = `${id}.pdf`;
+    const filePath = path.join(baseDir, filename);
 
-    const dest = path.join(SIRES_DIR, `${id}.pdf`);
-    fs.writeFileSync(dest, f.buffer);
-    console.log(`[SIRES] PDF salvo -> ${dest}`);
-    return res.status(201).json({ ok: true, path: `/uploads/sires/${id}.pdf` });
-  } catch (e) {
-    console.error("[SIRES] Erro no upload:", e);
-    return res.status(500).json({ error: "Falha ao salvar PDF." });
+    await fsp.writeFile(filePath, req.file.buffer);
+
+    await pool.query("INSERT INTO sires (id, name, filename) VALUES ($1, $2, $3)", [id, name, filename]);
+
+    return res.status(201).json({ id, name });
+  } catch (err) {
+    console.error("[sires POST] error:", err);
+    return res.status(500).json({ message: "Falha ao salvar ficha do touro." });
   }
 });
 
 // GET /api/v1/sires/:id/pdf
 router.get("/:id/pdf", async (req, res) => {
-  const filePath = path.join(SIRES_DIR, `${req.params.id}.pdf`);
-  console.log(`[SIRES] solicitando PDF -> ${filePath}`);
-  if (!fs.existsSync(filePath)) {
-    return res.status(404).json({ error: "PDF não encontrado para este touro." });
+  try {
+    const { id } = req.params;
+    const { rows } = await pool.query("SELECT filename FROM sires WHERE id = $1", [id]);
+    const row = rows[0];
+    if (!row) return res.status(404).send("Touro não encontrado.");
+
+    const filePath = path.resolve("storage", "sires", row.filename);
+    if (!fs.existsSync(filePath)) return res.status(404).send("PDF não encontrado.");
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `inline; filename="${row.filename}"`);
+    fs.createReadStream(filePath).pipe(res);
+  } catch (err) {
+    console.error("[sires GET pdf] error:", err);
+    res.status(500).send("Erro ao abrir PDF.");
   }
-  res.setHeader("Content-Type", "application/pdf");
-  res.setHeader(
-    "Content-Disposition",
-    `inline; filename="ficha-${req.params.id}.pdf"`
-  );
-  return res.sendFile(filePath);
 });
 
 export default router;
