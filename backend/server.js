@@ -52,7 +52,10 @@ app.use(morgan("dev"));
 // Ativa multi-tenant/backup só quando quiser
 if (BACKUP_ENABLED) {
   app.use(tenantContext);
-  app.use(backupOnWrite);
+  app.use((req, res, next) => {
+    if (req.path.startsWith("/api/v1/sires")) return next();
+    return backupOnWrite(req, res, next);
+  });
 }
 
 // Garante tabelas e registra recursos adicionais
