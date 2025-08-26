@@ -27,19 +27,9 @@ export function ImportarFichaTouro({ onFechar, onSalvar }) {
       alert("Preencha o nome do touro e selecione o PDF.");
       return;
     }
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64data = reader.result;
-      const touroObj = {
-        nome: nomeTouro,
-        arquivoBase64: base64data, // pronto para <iframe>
-        texto: "(Texto não extraído — sem pdfjs)",
-        dataUpload: new Date().toISOString(),
-      };
-      onSalvar?.(touroObj);
-      onFechar?.();
-    };
-    reader.readAsDataURL(arquivo);
+    // devolve o File diretamente (sem converter para base64)
+    onSalvar?.({ nome: nomeTouro, file: arquivo });
+    onFechar?.();
   };
 
   return (
