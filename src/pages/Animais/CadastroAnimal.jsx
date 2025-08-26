@@ -59,6 +59,7 @@ function ModalImportarTouro({ open, defaultName = "", sireId, onClose, onDone })
   const [nome, setNome] = useState(defaultName || "");
   const [file, setFile] = useState(null);
   const [busy, setBusy] = useState(false);
+  const fileRef = useRef(null);
 
   if (!open) return null;
 
@@ -109,12 +110,39 @@ function ModalImportarTouro({ open, defaultName = "", sireId, onClose, onDone })
             {!!sireId && <small style={{ color: "#475569" }}>Usando o touro já selecionado.</small>}
           </div>
           <div>
-            <label style={{ fontWeight: 600 }}>Arquivo (PDF)</label>
+            <label style={{ fontWeight: 600, display: "block", marginBottom: ".25rem" }}>Arquivo (PDF)</label>
+            {/* input oculto + botão chamando o seletor */}
             <input
+              ref={fileRef}
               type="file"
               accept="application/pdf"
-              onChange={(e) => setFile(e.target.files?.[0] || null)}
+              onChange={(e) => {
+                const f = e.target.files?.[0] || null;
+                setFile(f);
+              }}
+              style={{ display: "none" }}
             />
+            <div style={{ display: "flex", alignItems: "center", gap: ".75rem" }}>
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                style={{
+                  padding: ".6rem 1.2rem",
+                  borderRadius: 8,
+                  border: "1px solid #cbd5e1",
+                  background: "#e0f2fe",
+                  color: "#0369a1",
+                  fontWeight: 600,
+                  cursor: "pointer"
+                }}
+              >
+                Selecionar arquivo
+              </button>
+              <span style={{ color: file ? "#111827" : "#6b7280", fontSize: ".95rem" }}>
+                {file ? file.name : "Nenhum arquivo selecionado"}
+              </span>
+            </div>
+            <small style={{ color: "#64748b" }}>Apenas PDF, até 15 MB.</small>
           </div>
           <div style={{ display: "flex", gap: ".75rem", justifyContent: "flex-end", marginTop: ".5rem" }}>
             <button onClick={onClose} style={{ padding: ".6rem 1.2rem", borderRadius: 8, border: "1px solid #e5e7eb", background: "#f9fafb" }}>
