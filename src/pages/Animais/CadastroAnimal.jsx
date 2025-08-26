@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import Select from "react-select";
 import { ImportarFichaTouro, AbrirFichaTouro } from "./FichasTouros";
+import { criarAnimal } from "../../api"; // 🔗 chama POST /api/v1/animals
 
 /* ===========================================
    Helpers inline (sem dependências externas)
@@ -361,32 +362,20 @@ export default function CadastroAnimal({ animais = [], onAtualizar }) {
       return;
     }
 
-    const novo = {
-      numero,
-      brinco,
-      nascimento,
-      sexo,
-      origem,
-      valorCompra: origem === "comprado" ? valorCompra : "",
-      raca,
-      idade,
-      categoria,
-      criadoEm: new Date().toISOString(),
-      status: "ativo",
-      statusReprodutivo: "pos-parto",
-      ultimaAcao: { tipo: "parto", data: nascimento },
-      proximaAcao: { tipo: "fim_pev", dataPrevista: "" },
-      ...complementares,
-    };
-
     try {
       setSalvando(true);
 
-      // TODO: integrar API (PostgreSQL). Exemplo:
-      // const res = await fetch('/api/animais', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(novo) });
-      // if (!res.ok) throw new Error('Falha ao salvar');
-      // const inserido = await res.json();
-      const inserido = novo; // enquanto não integra, só ecoa
+      // 🔗 Persistência real no Postgres (enviar apenas campos do schema do backend)
+      const payload = {
+        numero,
+        brinco,
+        nascimento, // TEXT (dd/mm/aaaa)
+        raca,
+        estado: categoria || "vazia",
+        ...(complementares?.ultimaIA ? { ultima_ia: complementares.ultimaIA } : {}),
+        ...(complementares?.ultimoParto ? { parto: complementares.ultimoParto } : {}),
+      };
+      const inserido = await criarAnimal(payload); // POST /api/v1/animals
 
       onAtualizar?.([...(animais || []), inserido]);
 

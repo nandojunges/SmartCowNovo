@@ -1,5 +1,5 @@
 // src/pages/Animais/Animais.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ListChecks,
   PlusCircle,
@@ -18,6 +18,7 @@ import Plantel from './Plantel';
 import Secagem from './Secagem';
 import Parto from './Parto';
 import CadastroAnimal from './CadastroAnimal'; // ✅ novo import
+import { getAnimais } from '../../api'; // 🔗 GET /api/v1/animals
 
 /* ---------------------------
    🎨 Personalização central
@@ -127,6 +128,19 @@ export default function Animais() {
   const [animais, setAnimais] = useState([]);
   const [expandido, setExpandido] = useState(false);
 
+  const carregar = async () => {
+    try {
+      const { items } = await getAnimais();
+      setAnimais(items || []);
+    } catch (err) {
+      console.error('Erro ao carregar animais:', err);
+    }
+  };
+
+  useEffect(() => {
+    carregar();
+  }, []);
+
   const atualizarLocal = (novaLista) =>
     setAnimais(Array.isArray(novaLista) ? novaLista : []);
 
@@ -136,7 +150,7 @@ export default function Animais() {
         return (
           <AbasTodos
             animais={animais}
-            onRefresh={() => {}}
+            onRefresh={carregar}
             componentes={{
               plantel: (p) => <Plantel {...p} />,
               secagem: (p) => <Secagem {...p} />,
