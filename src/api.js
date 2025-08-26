@@ -82,11 +82,11 @@ export async function createSire(data) {
   return res.data;
 }
 
-export async function uploadSirePdf(id, file) {
+export async function uploadSirePdf(sireId, file) {
   const form = new FormData();
-  form.append('file', file);
-  const res = await api.post(path(`/v1/sires/${id}/file`), form, {
-    headers: { 'Content-Type': 'multipart/form-data' },
+  form.append("file", file);
+  const res = await api.post(`/api/v1/sires/${sireId}/pdf`, form, {
+    headers: { "Content-Type": "multipart/form-data" },
   });
   return res.data;
 }
