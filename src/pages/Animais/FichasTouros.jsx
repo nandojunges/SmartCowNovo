@@ -1,6 +1,5 @@
 // src/pages/Animais/FichasTouros.jsx
 import React, { useEffect, useRef, useState } from "react";
-import api from "../../api";
 
 /* ===============================
    📎 Importar Ficha do Touro (upload PDF)
@@ -39,13 +38,15 @@ export function ImportarFichaTouro({ onSucesso, onFechar }) {
       const fd = new FormData();
       fd.append("name", nome.trim());
       fd.append("pdf", arquivo);
-      const { data } = await api.post("/v1/sires", fd);
+      const resp = await fetch("/api/v1/sires", { method: "POST", body: fd, credentials: "include" });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) throw new Error(data?.message || `Falha ${resp.status}`);
       onSucesso?.(data);
       window.open(`/api/v1/sires/${data.id}/pdf`, "_blank", "noopener");
       onFechar?.();
     } catch (err) {
       console.error("Falha ao anexar a ficha do touro:", err);
-      alert(err?.response?.data?.message || "Não foi possível anexar a ficha.");
+      alert(err?.message || "Não foi possível anexar a ficha.");
     } finally {
       setSalvando(false);
     }

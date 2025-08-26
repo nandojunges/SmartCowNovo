@@ -14,8 +14,12 @@ const api = axios.create({
 
 // injeta token (se houver) e permite FormData sem forçar JSON
 api.interceptors.request.use((config) => {
-  if (config.data instanceof FormData && config.headers) {
-    delete config.headers['Content-Type'];
+  if (config.data instanceof FormData) {
+    if (config.headers) {
+      delete config.headers['Content-Type'];
+    }
+    // impede qualquer transform de JSON
+    config.transformRequest = [(d) => d];
   }
   const token = localStorage.getItem('token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
