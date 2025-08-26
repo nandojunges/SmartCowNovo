@@ -5,19 +5,13 @@ import fs from "node:fs";
 
 const router = express.Router();
 
-// Pasta onde os PDFs serão salvos
+// Pasta dos PDFs
 const SIRES_DIR = path.join(process.cwd(), "uploads", "sires");
 fs.mkdirSync(SIRES_DIR, { recursive: true });
 
-// Aceita só PDF, até 15 MB
+// Usaremos memoryStorage para forçar o nome final <id>.pdf
 const upload = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => cb(null, SIRES_DIR),
-    filename: (req, file, cb) => {
-      const { id } = req.params;
-      cb(null, `${id}.pdf`); // sobrescreve a ficha do touro
-    },
-  }),
+  storage: multer.memoryStorage(),
   limits: { fileSize: 15 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (file.mimetype !== "application/pdf") {
@@ -27,19 +21,42 @@ const upload = multer({
   },
 });
 
-// POST /api/v1/sires/:id/pdf  -> upload da ficha (campo "file")
-router.post("/:id/pdf", upload.single("file"), async (req, res) => {
-  return res.status(201).json({ ok: true });
+// POST /api/v1/sires/:id/pdf   (campo pode ser file, pdf ou arquivo)
+router.post("/:id/pdf", upload.any(), async (req, res) => {
+  try {
+    const id = req.params.id;
+    const f =
+      req.files?.find((x) => ["file", "pdf", "arquivo"].includes(x.fieldname)) ||
+      req.files?.[0];
+
+    if (!f) {
+      return res
+        .status(400)
+        .json({ error: "Arquivo não recebido (use o campo 'file')." });
+    }
+
+    const dest = path.join(SIRES_DIR, `${id}.pdf`);
+    fs.writeFileSync(dest, f.buffer);
+    console.log(`[SIRES] PDF salvo -> ${dest}`);
+    return res.status(201).json({ ok: true, path: `/uploads/sires/${id}.pdf` });
+  } catch (e) {
+    console.error("[SIRES] Erro no upload:", e);
+    return res.status(500).json({ error: "Falha ao salvar PDF." });
+  }
 });
 
-// GET /api/v1/sires/:id/pdf   -> devolve a ficha
+// GET /api/v1/sires/:id/pdf
 router.get("/:id/pdf", async (req, res) => {
   const filePath = path.join(SIRES_DIR, `${req.params.id}.pdf`);
+  console.log(`[SIRES] solicitando PDF -> ${filePath}`);
   if (!fs.existsSync(filePath)) {
     return res.status(404).json({ error: "PDF não encontrado para este touro." });
   }
   res.setHeader("Content-Type", "application/pdf");
-  res.setHeader("Content-Disposition", `inline; filename="ficha-${req.params.id}.pdf"`);
+  res.setHeader(
+    "Content-Disposition",
+    `inline; filename="ficha-${req.params.id}.pdf"`
+  );
   return res.sendFile(filePath);
 });
 
