@@ -100,8 +100,8 @@ app.use("/api/data", express.static(path.join(__dirname, "data")));
 // Garante pasta para dumps/recuperações manuais (compatível com seu antigo)
 fs.mkdirSync(path.join(__dirname, "dadosExcluidos"), { recursive: true });
 
-// servir arquivos enviados (ex.: PDFs de touros)
-app.use('/files', express.static(path.join(process.cwd(), 'storage', 'uploads')));
+// (opcional) servir uploads (ex.: PDFs de touros)
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 // Rotas da API
 // ⚠️ Mantenha por enquanto só as essenciais.
