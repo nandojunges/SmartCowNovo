@@ -46,8 +46,13 @@ const PORT = process.env.PORT || 3001;
 
 const app = express();
 app.use(cors());
-app.use(express.json({ limit: "10mb" }));
 app.use(morgan("dev"));
+
+// 🚩 1) Monte a rota de upload ANTES de tocar no body (json/urlencoded/backup)
+app.use('/api/v1/sires', siresRoutes);
+
+// Parsers para o restante da API (depois do upload)
+app.use(express.json({ limit: "10mb" }));
 
 // Ativa multi-tenant/backup só quando quiser
 if (BACKUP_ENABLED) {
@@ -117,7 +122,7 @@ app.use('/api/v1/animals/metrics', animalsMetrics);
 app.use('/api/v1/products/metrics', productsMetrics);
 
 // === Recursos v1 ===
-app.use('/api/v1/sires', siresRoutes);
+// (siresRoutes já foi montada acima, antes dos parsers)
 app.use('/api/v1/animals', animalsResource);
 app.use('/api/v1/products', productsResource);
 
