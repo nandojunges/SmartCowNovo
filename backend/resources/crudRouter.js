@@ -2,7 +2,7 @@
 import express from 'express';
 import { v4 as uuid } from 'uuid';
 
-function extractUserId(req) {
+export function extractUserId(req) {
   // tenta vários formatos comuns de middleware
   const u = req.user || req.auth || {};
   let id = u.id || u.userId || req.userId || u.sub || null;

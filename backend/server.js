@@ -6,7 +6,7 @@ import path from "node:path";
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
-import { ensureTables } from "./bootstrapResources.js";
+import bootstrapResources from "./bootstrapResources.js";
 
 import authRoutes from "./routes/auth.js";
 import { tenantContext } from "./middleware/tenantContext.js";
@@ -48,15 +48,17 @@ app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 app.use(morgan("dev"));
 
-// Garante tabelas dos novos recursos (não toca usuários)
-ensureTables().catch(err => {
-  console.error('Falha ao criar tabelas de recursos:', err);
-});
-
 // Ativa multi-tenant/backup só quando quiser
 if (BACKUP_ENABLED) {
   app.use(tenantContext);
   app.use(backupOnWrite);
+}
+
+// Garante tabelas e registra recursos adicionais
+try {
+  await bootstrapResources(app);
+} catch (err) {
+  console.error('Falha ao iniciar recursos:', err);
 }
 
 // Logger focado em /api/auth/*
@@ -96,6 +98,9 @@ app.use("/api/data", express.static(path.join(__dirname, "data")));
 
 // Garante pasta para dumps/recuperações manuais (compatível com seu antigo)
 fs.mkdirSync(path.join(__dirname, "dadosExcluidos"), { recursive: true });
+
+// servir arquivos enviados (ex.: PDFs de touros)
+app.use('/files', express.static(path.join(process.cwd(), 'storage', 'uploads')));
 
 // Rotas da API
 // ⚠️ Mantenha por enquanto só as essenciais.
