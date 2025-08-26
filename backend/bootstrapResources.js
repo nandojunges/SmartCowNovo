@@ -5,6 +5,7 @@ export async function ensureTables() {
   const sql = `
     CREATE TABLE IF NOT EXISTS animals (
       id TEXT PRIMARY KEY,
+      owner_id TEXT,
       numero TEXT,
       brinco TEXT,
       nascimento TEXT,
@@ -17,6 +18,7 @@ export async function ensureTables() {
 
     CREATE TABLE IF NOT EXISTS products (
       id TEXT PRIMARY KEY,
+      owner_id TEXT,
       nome TEXT NOT NULL,
       categoria TEXT,
       unidade TEXT,
@@ -25,6 +27,12 @@ export async function ensureTables() {
       validade TEXT,
       created_at TIMESTAMPTZ DEFAULT now()
     );
+
+    -- Garantir colunas caso a tabela já exista (ambiente que veio antes)
+    ALTER TABLE animals  ADD COLUMN IF NOT EXISTS owner_id TEXT;
+    ALTER TABLE products ADD COLUMN IF NOT EXISTS owner_id TEXT;
+    CREATE INDEX IF NOT EXISTS idx_animals_owner  ON animals(owner_id);
+    CREATE INDEX IF NOT EXISTS idx_products_owner ON products(owner_id);
   `;
   await db.query(sql);
 }

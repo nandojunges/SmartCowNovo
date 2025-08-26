@@ -33,10 +33,7 @@ api.interceptors.response.use(
 
 // ✅ helper que sempre prefixa com /api
 const API = '/api';
-const path = (s = '') => {
-  const seg = s.startsWith('/') ? s : `/${s}`;
-  return `${API}${seg}`;
-};
+const path = (s = '') => `${API}${s.startsWith('/') ? s : `/${s}`}`;
 
 export default api;
 
@@ -47,27 +44,28 @@ export async function getAnimais({ estado, q, page, limit } = {}) {
   if (q) params.q = q;
   if (page) params.page = page;
   if (limit) params.limit = limit;
-  const res = await api.get(path('/animais'), { params });
+  // ROTA CORRETA DO BACKEND
+  const res = await api.get(path('/v1/animals'), { params });
   return res.data;
 }
 
 export async function getAnimal(id) {
-  const res = await api.get(path(`/animais/${id}`));
+  const res = await api.get(path(`/v1/animals/${id}`));
   return res.data;
 }
 
 export async function criarAnimal(data) {
-  const res = await api.post(path('/animais'), data);
+  const res = await api.post(path('/v1/animals'), data);
   return res.data;
 }
 
 export async function atualizarAnimal(id, data) {
-  const res = await api.put(path(`/animais/${id}`), data);
+  const res = await api.put(path(`/v1/animals/${id}`), data);
   return res.data;
 }
 
 export async function removerAnimal(id) {
-  const res = await api.delete(path(`/animais/${id}`));
+  const res = await api.delete(path(`/v1/animals/${id}`));
   return res.data;
 }
 
