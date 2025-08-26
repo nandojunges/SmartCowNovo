@@ -77,9 +77,11 @@ export async function getSires({ q, page, limit } = {}) {
   return res.data;
 }
 
-export async function createSire(data) {
-  const res = await api.post(path('/v1/sires'), data);
-  return res.data;
+// --- FICHA DO TOURO ---
+// cria o touro (apenas dados básicos)
+export async function createSire(nome) {
+  const res = await api.post("/api/v1/sires", { name: nome });
+  return res.data; // deve retornar { id, name, ... }
 }
 
 export async function uploadSirePdf(sireId, file) {
